@@ -168,6 +168,14 @@ d'en-têtes de colonnes.
 - La liste des **paniers en attente** reste affichée et modifiable, pour ne pas bloquer
   la finalisation d'un panier déjà commencé pendant que la permanence était encore ouverte.
 
+## Numéro de version
+
+- Affiché en pied de page de chaque écran (ex : « Version 2026.07.08 »).
+- Géré dans un seul fichier, `APP/version.py` (constante `VERSION`), au format `AAAA.MM.JJ`.
+- À chaque nouvelle livraison, il suffit de mettre à jour cette valeur (date du jour, ou
+  `AAAA.MM.JJ-2`, `-3`... en cas de plusieurs livraisons le même jour) ; elle est ensuite
+  injectée automatiquement dans tous les templates (aucune autre modification nécessaire).
+
 ## Points prévus pour la suite
 
 - **ADMINDB** : intégration effective d'Adminer (URL de service à configurer via

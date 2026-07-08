@@ -48,6 +48,13 @@ def create_app():
     def inject_current_role():
         return {"current_role": current_role()}
 
+    # Rend le numéro de version disponible dans tous les templates (pied de page)
+    from APP.version import VERSION
+
+    @app.context_processor
+    def inject_version():
+        return {"version_app": VERSION}
+
     # ------------------------------------------------------------------
     # Enregistrement des blueprints (routes)
     # ------------------------------------------------------------------
