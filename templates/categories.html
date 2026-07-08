@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block titre %}Catégories{% endblock %}
+
+{% block contenu %}
+<h1>Catégories</h1>
+<p><em>La couleur définit l'apparence des boutons de prestations de cette catégorie
+    à l'écran Caisse.</em></p>
+
+<div class="carte">
+    <form class="inline" method="post" action="{{ url_for('categories.categories_ajouter') }}">
+        <input type="text" name="nom" placeholder="Nouvelle catégorie (ex: Bar, Atelier...)" required>
+        <label>Couleur <input type="color" name="couleur" value="#4a5568"></label>
+        <button type="submit" class="btn btn-primaire">Ajouter</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr><th>Nom</th><th style="width:90px;">Couleur</th><th style="width:220px;">Action</th></tr>
+        </thead>
+        <tbody>
+            {% for cat in categories %}
+            <tr id="vue-cat-{{ cat.id }}">
+                <td>{{ cat.nom }}</td>
+                <td><span style="display:inline-block;width:24px;height:24px;border-radius:4px;background:{{ cat.couleur }};border:1px solid #cbd5e0;"></span></td>
+                <td>
+                    <button type="button" class="btn btn-editer" onclick="toggleEdition('cat-{{ cat.id }}')">Éditer</button>
+                    <form method="post" action="{{ url_for('categories.categories_supprimer', cat_id=cat.id) }}"
+                          style="display:inline;" onsubmit="return confirm('Supprimer la catégorie {{ cat.nom }} ?');">
+                        <button type="submit" class="btn btn-danger">Supprimer</button>
+                    </form>
+                </td>
+            </tr>
+            <tr id="edition-cat-{{ cat.id }}" class="ligne-edition">
+                <td colspan="3">
+                    <form method="post" action="{{ url_for('categories.categories_modifier', cat_id=cat.id) }}">
+                        <input type="text" name="nom" value="{{ cat.nom }}" required>
+                        <label>Couleur <input type="color" name="couleur" value="{{ cat.couleur }}"></label>
+                        <button type="submit" class="btn btn-primaire">Enregistrer</button>
+                        <button type="button" class="btn btn-annuler" onclick="toggleEdition('cat-{{ cat.id }}')">Annuler</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3">Aucune catégorie enregistrée.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

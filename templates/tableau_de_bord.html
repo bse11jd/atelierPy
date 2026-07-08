@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block titre %}Tableau de bord{% endblock %}
+
+{% block contenu %}
+<h1>Tableau de bord</h1>
+
+<div class="carte">
+    <h2 style="margin-top:0;">Factures</h2>
+    <form class="inline" method="get" action="{{ url_for('tableau_de_bord.tableau_de_bord') }}">
+        <select name="moyen_paiement_id">
+            <option value="">Tous les moyens de paiement</option>
+            {% for m in moyens_paiement %}
+            <option value="{{ m.id }}" {{ 'selected' if args.get('moyen_paiement_id')|string == m.id|string }}>{{ m.nom }}</option>
+            {% endfor %}
+        </select>
+        <input type="date" name="date_debut" value="{{ args.get('date_debut', '') }}" placeholder="Du">
+        <input type="date" name="date_fin" value="{{ args.get('date_fin', '') }}" placeholder="Au">
+        <select name="tri">
+            <option value="date_desc" {{ 'selected' if args.get('tri', 'date_desc') == 'date_desc' }}>Date (récent → ancien)</option>
+            <option value="date_asc" {{ 'selected' if args.get('tri') == 'date_asc' }}>Date (ancien → récent)</option>
+            <option value="montant_desc" {{ 'selected' if args.get('tri') == 'montant_desc' }}>Montant décroissant</option>
+            <option value="montant_asc" {{ 'selected' if args.get('tri') == 'montant_asc' }}>Montant croissant</option>
+            <option value="numero" {{ 'selected' if args.get('tri') == 'numero' }}>Numéro de facture</option>
+        </select>
+        <button type="submit" class="btn btn-primaire">Filtrer</button>
+    </form>
+
+    <div class="table-toolbar">
+        <a class="btn btn-logout" href="{{ url_for('tableau_de_bord.tableau_de_bord_export', **args) }}">Exporter CSV</a>
+    </div>
+    <div class="table-scroll">
+    <table>
+        <thead>
+            <tr>
+                <th>Numéro</th><th class="col-nowrap">Date</th><th>Permanent</th><th>Adhérent</th>
+                <th class="col-num">Montant</th><th>Moyen de paiement</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for f in factures %}
+            <tr>
+                <td>{{ f.numero }}</td>
+                <td class="col-nowrap">{{ f.date_facture.strftime('%d/%m/%Y %H:%M') if f.date_facture else '' }}</td>
+                <td>{{ f.permanence.nom_ouverture if f.permanence else '' }}</td>
+                <td>{{ f.panier.nom_adherent if f.panier else '' }}</td>
+                <td class="col-num">{{ "%.2f"|format(f.montant) }} €</td>
+                <td>{{ f.moyen_paiement.nom if f.moyen_paiement else '' }}</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6">Aucune facture trouvée.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+
+    {% if pagination and pagination.pages > 1 %}
+    <div style="display:flex; justify-content:center; align-items:center; gap:0.6rem; margin-top:1rem;">
+        {% if pagination.has_prev %}
+        <a class="btn btn-editer" href="{{ page_url(pagination.prev_num) }}">← Précédent</a>
+        {% endif %}
+        <span>Page {{ pagination.page }} / {{ pagination.pages }} ({{ pagination.total }} factures)</span>
+        {% if pagination.has_next %}
+        <a class="btn btn-editer" href="{{ page_url(pagination.next_num) }}">Suivant →</a>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <h3 style="margin-top:1.8rem;">Répartition des encaissements par moyen de paiement</h3>
+    <p><em>Cette répartition applique les mêmes filtres de dates que la liste des factures ci-dessus
+        (« Du » / « Au »), indépendamment du filtre par moyen de paiement.</em></p>
+
+    <div class="table-toolbar">
+        <a class="btn btn-logout" href="{{ url_for('tableau_de_bord.tableau_de_bord_repartition_export', **args) }}">Exporter CSV</a>
+    </div>
+    <div class="table-scroll">
+    <table>
+        <thead>
+            <tr><th>Moyen de paiement</th><th class="col-num">Nombre de factures</th><th class="col-num">Total</th></tr>
+        </thead>
+        <tbody>
+            {% for r in repartition_moyens %}
+            <tr>
+                <td>{{ r.moyen }}</td>
+                <td class="col-num">{{ r.nb_factures }}</td>
+                <td class="col-num">{{ "%.2f"|format(r.total) }} €</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3">Aucun moyen de paiement enregistré.</td></tr>
+            {% endfor %}
+        </tbody>
+        {% if repartition_moyens %}
+        <tfoot>
+            <tr style="font-weight:600;">
+                <td>Total</td>
+                <td class="col-num">{{ repartition_moyens|sum(attribute='nb_factures') }}</td>
+                <td class="col-num">{{ "%.2f"|format(total_general) }} €</td>
+            </tr>
+        </tfoot>
+        {% endif %}
+    </table>
+    </div>
+</div>
+
+<div class="carte">
+    <h2 style="margin-top:0;">Paniers non payés</h2>
+    <div class="table-toolbar">
+        <a class="btn btn-logout" href="{{ url_for('tableau_de_bord.tableau_de_bord_paniers_non_payes_export') }}">Exporter CSV</a>
+    </div>
+    <div class="table-scroll">
+    <table>
+        <thead>
+            <tr>
+                <th>Adhérent</th><th>Permanent</th><th class="col-nowrap">Créé le</th>
+                <th class="col-num">Lignes</th><th class="col-num">Total</th><th style="width:100px;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for p in paniers_non_payes %}
+            <tr>
+                <td>{{ p.nom_adherent }}</td>
+                <td>{{ p.permanence.nom_ouverture if p.permanence else '' }}</td>
+                <td class="col-nowrap">{{ p.date_creation.strftime('%d/%m/%Y %H:%M') if p.date_creation else '' }}</td>
+                <td class="col-num">{{ p.nb_lignes }}</td>
+                <td class="col-num">{{ "%.2f"|format(p.total) }} €</td>
+                <td><a class="btn btn-editer" href="{{ url_for('caisse.caisse_panier', panier_id=p.id) }}">Ouvrir</a></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6">Aucun panier en attente de paiement.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+
+<div class="carte">
+    <h2 style="margin-top:0;">Retraits de caisse</h2>
+    <div class="table-toolbar">
+        <a class="btn btn-logout" href="{{ url_for('tableau_de_bord.tableau_de_bord_retraits_export') }}">Exporter CSV</a>
+    </div>
+    <div class="table-scroll">
+    <table>
+        <thead>
+            <tr>
+                <th class="col-nowrap">Date</th><th>Permanent</th><th>Nom (retrait)</th><th>Motif</th>
+                <th class="col-num">Montant</th><th style="width:160px;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in retraits %}
+            <tr id="vue-retrait-{{ r.id }}">
+                <td class="col-nowrap">{{ r.date_retrait.strftime('%d/%m/%Y %H:%M') if r.date_retrait else '' }}</td>
+                <td>{{ r.permanence.nom_ouverture if r.permanence else '' }}</td>
+                <td>{{ r.nom_personne }}</td>
+                <td>{{ r.motif }}</td>
+                <td class="col-num">{{ "%.2f"|format(r.montant) }} €</td>
+                <td>
+                    <button type="button" class="btn btn-editer" onclick="toggleEdition('retrait-{{ r.id }}')">Modifier</button>
+                    <form method="post" style="display:inline;"
+                          action="{{ url_for('tableau_de_bord.tableau_de_bord_retrait_supprimer', retrait_id=r.id) }}"
+                          onsubmit="return confirm('Supprimer ce retrait ?');">
+                        <button type="submit" class="btn btn-danger">✕</button>
+                    </form>
+                </td>
+            </tr>
+            <tr id="edition-retrait-{{ r.id }}" class="ligne-edition">
+                <td colspan="6">
+                    <form method="post"
+                          action="{{ url_for('tableau_de_bord.tableau_de_bord_retrait_modifier', retrait_id=r.id) }}">
+                        <input type="text" name="nom_personne" value="{{ r.nom_personne }}" required placeholder="Nom">
+                        <input type="text" name="motif" value="{{ r.motif }}" required placeholder="Motif" style="min-width:220px;">
+                        <input type="number" step="0.01" min="0.01" name="montant" value="{{ '%.2f'|format(r.montant) }}" required>
+                        <button type="submit" class="btn btn-primaire">Enregistrer</button>
+                        <button type="button" class="btn btn-annuler" onclick="toggleEdition('retrait-{{ r.id }}')">Annuler</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6">Aucun retrait de caisse enregistré.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Accès refusé</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <main class="contenu">
+        <h1>403 - Accès refusé</h1>
+        <p>Votre niveau de droit ne permet pas d'accéder à cet écran.</p>
+        <p><a href="{{ url_for('accueil.accueil') }}">Retour à l'accueil</a></p>
+    </main>
+</body>
+</html>

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block titre %}Accueil{% endblock %}
+
+{% block contenu %}
+<h1>Accueil</h1>
+
+<div class="carte">
+    <h2 style="margin-top:0;">Permanence</h2>
+
+    {% if permanence %}
+        <p>
+            Permanence <strong>ouverte</strong> par <strong>{{ permanence.nom_ouverture }}</strong>
+            depuis le {{ permanence.date_ouverture.strftime('%d/%m/%Y à %H:%M') }}.<br>
+            Fond de caisse initial : <strong>{{ "%.2f"|format(permanence.fond_ouverture) }} €</strong>
+        </p>
+
+        <form method="post" action="{{ url_for('accueil.permanence_fermer') }}">
+            <p>
+                <label>Nom du permanent (fermeture)<br>
+                    <input type="text" name="nom_permanent" required placeholder="Votre nom" autocomplete="off">
+                </label>
+            </p>
+            <p>
+                <label>Somme disponible en caisse (fond initial + espèces encaissées, modifiable)<br>
+                    <input type="number" step="0.01" name="fond_fermeture"
+                           value="{{ '%.2f'|format(montant_suggere) }}" required>
+                </label>
+            </p>
+            <button type="submit" class="btn btn-danger">Fermer la permanence</button>
+        </form>
+    {% else %}
+        <p>Aucune permanence n'est actuellement ouverte. L'accès à la <strong>Caisse</strong>
+            nécessite l'ouverture d'une permanence.</p>
+
+        <form method="post" action="{{ url_for('accueil.permanence_ouvrir') }}">
+            <p>
+                <label>Nom du permanent (ouverture)<br>
+                    <input type="text" name="nom_permanent" required placeholder="Votre nom" autocomplete="off">
+                </label>
+            </p>
+            <p>
+                <label>Fond de caisse en début de permanence (modifiable)<br>
+                    <input type="number" step="0.01" name="fond_ouverture"
+                           value="{{ '%.2f'|format(montant_suggere) }}" required>
+                </label>
+            </p>
+            <button type="submit" class="btn btn-primaire">Ouvrir la permanence</button>
+        </form>
+    {% endif %}
+</div>
+
+<div class="tuiles">
+    <a href="{{ url_for('caisse.caisse') }}" class="tuile">
+        <span class="icone">💰</span> Caisse
+    </a>
+
+    {% if current_role in ['super_utilisateur', 'admin'] %}
+    <a href="{{ url_for('categories.categories') }}" class="tuile">
+        <span class="icone">🗂️</span> Catégories
+    </a>
+    <a href="{{ url_for('catalogue.catalogue') }}" class="tuile">
+        <span class="icone">📋</span> Catalogue
+    </a>
+    <a href="{{ url_for('paiement.paiement') }}" class="tuile">
+        <span class="icone">💳</span> Paiement
+    </a>
+    <a href="{{ url_for('retrait_caisse.retrait_caisse') }}" class="tuile">
+        <span class="icone">💸</span> Retrait Caisse
+    </a>
+    <a href="{{ url_for('tableau_de_bord.tableau_de_bord') }}" class="tuile">
+        <span class="icone">📊</span> Tableau de bord
+    </a>
+    {% endif %}
+
+    {% if current_role == 'admin' %}
+    <a href="{{ url_for('admindb.admindb') }}" class="tuile">
+        <span class="icone">🗄️</span> AdminDB
+    </a>
+    <a href="{{ url_for('maintenance.maintenance') }}" class="tuile">
+        <span class="icone">🛠️</span> Maintenance
+    </a>
+    <a href="{{ url_for('auth.auth_gestion') }}" class="tuile">
+        <span class="icone">🔐</span> Droits
+    </a>
+    {% endif %}
+</div>
+
+<div class="carte">
+    <h2 style="margin-top:0;">
+        Paniers encaissés
+        {% if permanence %}<small>(depuis l'ouverture de la permanence)</small>{% else %}<small>(20 derniers)</small>{% endif %}
+    </h2>
+    <table>
+        <thead>
+            <tr><th>Adhérent</th><th>Encaissé le</th><th>Moyen de paiement</th><th>Montant</th></tr>
+        </thead>
+        <tbody>
+            {% for p in paniers_encaisses %}
+            <tr>
+                <td>{{ p.nom_adherent }}</td>
+                <td>{{ p.date_encaissement.strftime('%d/%m/%Y %H:%M') if p.date_encaissement else '' }}</td>
+                <td>{{ p.facture.moyen_paiement.nom if p.facture and p.facture.moyen_paiement else '' }}</td>
+                <td>{{ "%.2f"|format(p.total) }} €</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4">Aucun panier encaissé pour le moment.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

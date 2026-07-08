@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block titre %}{{ 'Connexion' if mode == 'login' else 'Gestion des droits' }}{% endblock %}
+
+{% block contenu %}
+{% if mode == 'login' %}
+
+    <h1>Connexion</h1>
+    <div class="carte" style="max-width:360px;">
+        <form method="post" action="{{ url_for('auth.login') }}">
+            <p>
+                <label>Identifiant<br>
+                    <input type="text" name="username" required autofocus>
+                </label>
+            </p>
+            <p>
+                <label>Mot de passe<br>
+                    <input type="password" name="password" required>
+                </label>
+            </p>
+            <button type="submit" class="btn btn-primaire">Se connecter</button>
+        </form>
+    </div>
+
+{% else %}
+
+    <h1>Gestion des niveaux de droits</h1>
+
+    <div class="carte">
+        <h2>Créer un compte</h2>
+        <form class="inline" method="post" action="{{ url_for('auth.auth_ajouter') }}">
+            <input type="text" name="username" placeholder="Identifiant" required>
+            <input type="password" name="password" placeholder="Mot de passe" required>
+            <select name="role">
+                <option value="super_utilisateur">Super-utilisateur</option>
+                <option value="admin">Admin</option>
+            </select>
+            <button type="submit" class="btn btn-primaire">Créer</button>
+        </form>
+    </div>
+
+    <div class="carte">
+        <h2>Comptes existants</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Identifiant</th>
+                    <th>Rôle</th>
+                    <th>Actif</th>
+                    <th>Nouveau mot de passe</th>
+                    <th style="width:180px;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in utilisateurs %}
+                <tr>
+                    <td>{{ u.username }}</td>
+                    <td>
+                        <select name="role" form="form-modifier-{{ u.id }}">
+                            <option value="super_utilisateur" {{ 'selected' if u.role == 'super_utilisateur' }}>Super-utilisateur</option>
+                            <option value="admin" {{ 'selected' if u.role == 'admin' }}>Admin</option>
+                        </select>
+                    </td>
+                    <td><input type="checkbox" name="actif" form="form-modifier-{{ u.id }}" {{ 'checked' if u.actif }}></td>
+                    <td><input type="password" name="password" form="form-modifier-{{ u.id }}" placeholder="(inchangé)"></td>
+                    <td>
+                        <form id="form-modifier-{{ u.id }}" method="post"
+                              action="{{ url_for('auth.auth_modifier', user_id=u.id) }}" style="display:inline;">
+                            <button type="submit" class="btn btn-primaire">Enregistrer</button>
+                        </form>
+                        {% if u.id != current_user.id %}
+                        <form method="post" action="{{ url_for('auth.auth_supprimer', user_id=u.id) }}"
+                              style="display:inline;" onsubmit="return confirm('Supprimer {{ u.username }} ?');">
+                            <button type="submit" class="btn btn-danger">Supprimer</button>
+                        </form>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5">Aucun compte enregistré.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+{% endif %}
+{% endblock %}

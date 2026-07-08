@@ -1,0 +1,22 @@
+{% extends "base.html" %}
+{% block titre %}Maintenance{% endblock %}
+
+{% block contenu %}
+<h1>Maintenance</h1>
+
+<div class="carte">
+    <h2>Export de la base de données</h2>
+    {% if db_exists %}
+    <p>Taille actuelle de la base : {{ db_size_ko }} Ko.</p>
+    <p>
+        <a class="btn btn-primaire" href="{{ url_for('maintenance.maintenance_export_db') }}">
+            Exporter la base (téléchargement)
+        </a>
+    </p>
+    <p><em>Le fichier téléchargé peut être enregistré sur le poste ou directement
+        sur une clé USB via la boîte de dialogue d'enregistrement du navigateur.</em></p>
+    {% else %}
+    <p>Aucune base de données trouvée.</p>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block titre %}Gestion{% endblock %} - Atelier Café Racer</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+
+<header class="bandeau">
+    <div class="bandeau-gauche">
+        <a href="{{ url_for('accueil.accueil') }}" class="logo">🏍️ Atelier Café Racer</a>
+        <nav class="menu">
+            <a href="{{ url_for('accueil.accueil') }}"
+               class="{{ 'actif' if request.endpoint == 'accueil.accueil' else '' }}">Accueil</a>
+            <a href="{{ url_for('caisse.caisse') }}"
+               class="{{ 'actif' if request.endpoint == 'caisse.caisse' else '' }}">Caisse</a>
+
+            {% if current_role in ['super_utilisateur', 'admin'] %}
+            <a href="{{ url_for('categories.categories') }}"
+               class="{{ 'actif' if request.endpoint == 'categories.categories' else '' }}">Catégories</a>
+            <a href="{{ url_for('catalogue.catalogue') }}"
+               class="{{ 'actif' if request.endpoint == 'catalogue.catalogue' else '' }}">Catalogue</a>
+            <a href="{{ url_for('paiement.paiement') }}"
+               class="{{ 'actif' if request.endpoint == 'paiement.paiement' else '' }}">Paiement</a>
+            <a href="{{ url_for('retrait_caisse.retrait_caisse') }}"
+               class="{{ 'actif' if request.endpoint == 'retrait_caisse.retrait_caisse' else '' }}">Retrait Caisse</a>
+            <a href="{{ url_for('tableau_de_bord.tableau_de_bord') }}"
+               class="{{ 'actif' if request.endpoint == 'tableau_de_bord.tableau_de_bord' else '' }}">Tableau de bord</a>
+            {% endif %}
+
+            {% if current_role == 'admin' %}
+            <a href="{{ url_for('admindb.admindb') }}"
+               class="{{ 'actif' if request.endpoint == 'admindb.admindb' else '' }}">AdminDB</a>
+            <a href="{{ url_for('maintenance.maintenance') }}"
+               class="{{ 'actif' if request.endpoint == 'maintenance.maintenance' else '' }}">Maintenance</a>
+            <a href="{{ url_for('auth.auth_gestion') }}"
+               class="{{ 'actif' if request.endpoint == 'auth.auth_gestion' else '' }}">Droits</a>
+            {% endif %}
+        </nav>
+    </div>
+
+    <div class="bandeau-droite">
+        <span class="badge-role badge-{{ current_role }}">{{ current_role|replace('_', '-') }}</span>
+        {% if current_user.is_authenticated %}
+            <span class="utilisateur-connecte">{{ current_user.username }}</span>
+            <a href="{{ url_for('auth.logout') }}" class="btn btn-logout">Déconnexion</a>
+        {% else %}
+            <a href="{{ url_for('auth.login') }}" class="btn btn-login">Connexion</a>
+        {% endif %}
+    </div>
+</header>
+
+<main class="contenu">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flash-container">
+                {% for categorie, message in messages %}
+                    <div class="flash flash-{{ categorie }}">{{ message }}</div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    {% block contenu %}{% endblock %}
+</main>
+
+<footer class="pied-de-page">
+    <small>Niveau de droit connecté : <strong>{{ current_role }}</strong></small>
+</footer>
+
+<script src="{{ url_for('static', filename='js/app.js') }}"></script>
+{% block script_supplementaire %}{% endblock %}
+
+</body>
+</html>

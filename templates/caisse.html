@@ -1,0 +1,207 @@
+{% extends "base.html" %}
+{% block titre %}Caisse{% endblock %}
+
+{% block contenu %}
+<h1>Caisse</h1>
+
+{% if panier %}
+{# ============================= DÉTAIL D'UNE VENTE ============================= #}
+
+<div class="carte">
+    <form class="inline" method="post" action="{{ url_for('caisse.caisse_panier_renommer', panier_id=panier.id) }}">
+        <label>Adhérent
+            <input type="text" name="nom_adherent" value="{{ panier.nom_adherent or '' }}"
+                   placeholder="Nom de l'adhérent" {{ 'disabled' if panier.statut == 'annule' }}>
+        </label>
+        {% if panier.statut != 'annule' %}
+        <button type="submit" class="btn btn-primaire">Enregistrer</button>
+        {% endif %}
+        {% if panier.statut != 'brouillon' %}
+        <a href="{{ url_for('caisse.caisse') }}" class="btn btn-annuler">Retour à la liste</a>
+        {% endif %}
+    </form>
+
+    {% if panier.statut == 'brouillon' %}
+    <p style="color:var(--couleur-warning); margin-bottom:0;">
+        <strong>Vente en cours de saisie.</strong> Merci de la finaliser (Encaisser ou
+        Enregistrer ci-dessus) avant de quitter cette page — la navigation ailleurs sur
+        le site est bloquée tant que ce n'est pas fait.
+    </p>
+    {% elif panier.statut == 'encaisse' %}
+    <p style="margin-bottom:0;"><em>Facture {{ panier.facture.numero if panier.facture else '' }} encaissée
+        ({{ panier.facture.moyen_paiement.nom if panier.facture and panier.facture.moyen_paiement else '' }}).
+        Les prestations restent modifiables ; le montant de la facture est mis à jour automatiquement.</em></p>
+    {% elif panier.statut == 'annule' %}
+    <p style="margin-bottom:0;"><em>Ce panier est annulé, il n'est plus modifiable.</em></p>
+    {% endif %}
+
+    {% if panier.statut in ('brouillon', 'en_attente') %}
+    <hr style="border:none; border-top:1px solid var(--couleur-bordure); margin:1rem 0;">
+    <form class="inline" method="post" action="{{ url_for('caisse.caisse_panier_encaisser', panier_id=panier.id) }}">
+        <label>Finaliser
+            <select name="moyen_paiement_id" required>
+                <option value="" disabled selected>Moyen de paiement</option>
+                {% for m in moyens_paiement %}
+                <option value="{{ m.id }}">{{ m.nom }}</option>
+                {% endfor %}
+            </select>
+        </label>
+        <button type="submit" class="btn btn-primaire" {{ 'disabled' if panier.nb_lignes == 0 }}>
+            Encaisser
+        </button>
+        {% if panier.nb_lignes == 0 %}
+        <span style="color:#c53030; font-size:0.9rem;">Ajoutez au moins une prestation pour encaisser.</span>
+        {% else %}
+        <span style="color:#718096; font-size:0.9rem;">Le nom de l'adhérent n'est pas requis pour encaisser immédiatement.</span>
+        {% endif %}
+    </form>
+    <form method="post" action="{{ url_for('caisse.caisse_panier_annuler', panier_id=panier.id) }}"
+          style="margin-top:0.6rem;" onsubmit="return confirm('Annuler cette vente ?');">
+        <button type="submit" class="btn btn-danger">Annuler la vente</button>
+    </form>
+    {% endif %}
+</div>
+
+{% if panier.statut != 'annule' %}
+<div class="caisse-layout">
+    <div class="carte">
+        <h2 style="margin-top:0;">Prestations</h2>
+        {% for cat in categories %}
+        <div style="margin-bottom:1rem;">
+            <div style="font-weight:600; margin-bottom:0.4rem;">{{ cat.nom }}</div>
+            <div style="display:flex; flex-wrap:wrap; gap:0.5rem;">
+                {% for item in cat.prestations %}
+                <form method="post" action="{{ url_for('caisse.caisse_panier_ajouter', panier_id=panier.id) }}">
+                    <input type="hidden" name="item_id" value="{{ item.id }}">
+                    <button type="submit" class="btn-prestation" style="background:{{ cat.couleur }};">
+                        {{ item.libelle }}<br><small>{{ "%.2f"|format(item.prix) }} €</small>
+                    </button>
+                </form>
+                {% endfor %}
+            </div>
+        </div>
+        {% else %}
+        <p><em>Aucune prestation disponible. Ajoutez des prestations depuis l'écran Catalogue.</em></p>
+        {% endfor %}
+    </div>
+
+    <div class="carte">
+        <h2 style="margin-top:0;">Panier {{ 'de ' + panier.nom_adherent if panier.nom_adherent else '(sans nom pour le moment)' }}</h2>
+        <div class="table-scroll">
+        <table>
+            <thead>
+                <tr>
+                    <th>Prestation</th><th class="col-num">P.U.</th><th style="width:120px;">Qté</th>
+                    <th class="col-num">S/total</th><th style="width:50px;"></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for ligne in panier.lignes %}
+                <tr>
+                    <td>{{ ligne.libelle }}</td>
+                    <td class="col-num">{{ "%.2f"|format(ligne.prix_unitaire) }} €</td>
+                    <td>
+                        <form class="inline" style="margin:0;" method="post"
+                              action="{{ url_for('caisse.caisse_ligne_quantite', panier_id=panier.id, ligne_id=ligne.id) }}">
+                            <input type="number" name="quantite" value="{{ ligne.quantite }}" min="1"
+                                   style="width:55px;" onchange="this.form.submit()">
+                        </form>
+                    </td>
+                    <td class="col-num">{{ "%.2f"|format(ligne.sous_total) }} €</td>
+                    <td>
+                        <form method="post"
+                              action="{{ url_for('caisse.caisse_ligne_supprimer', panier_id=panier.id, ligne_id=ligne.id) }}">
+                            <button type="submit" class="btn btn-danger">✕</button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr><td colspan="5">Panier vide - cliquez sur une prestation à gauche pour l'ajouter.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+        <p style="text-align:right; font-size:1.2rem; margin-top:0.8rem;">
+            Total : <strong>{{ "%.2f"|format(panier.total) }} €</strong>
+        </p>
+    </div>
+</div>
+{% else %}
+<div class="carte">
+    <h2 style="margin-top:0;">Panier {{ 'de ' + panier.nom_adherent if panier.nom_adherent else '(sans nom)' }}</h2>
+    <div class="table-scroll">
+    <table>
+        <thead>
+            <tr><th>Prestation</th><th class="col-num">Prix unitaire</th><th class="col-num">Quantité</th><th class="col-num">Sous-total</th></tr>
+        </thead>
+        <tbody>
+            {% for ligne in panier.lignes %}
+            <tr>
+                <td>{{ ligne.libelle }}</td>
+                <td class="col-num">{{ "%.2f"|format(ligne.prix_unitaire) }} €</td>
+                <td class="col-num">{{ ligne.quantite }}</td>
+                <td class="col-num">{{ "%.2f"|format(ligne.sous_total) }} €</td>
+            </tr>
+            {% else %}
+            <tr><td colspan="4">Panier vide.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+    <p style="text-align:right; font-size:1.2rem; margin-top:0.8rem;">
+        Total : <strong>{{ "%.2f"|format(panier.total) }} €</strong>
+    </p>
+</div>
+{% endif %}
+
+{% block script_supplementaire %}
+{% if panier and panier.statut == 'brouillon' %}
+<script>bloquerNavigationVenteEnCours();</script>
+{% endif %}
+{% endblock %}
+
+{% else %}
+{# ============================= LISTE / NOUVELLE VENTE ============================= #}
+
+<div class="carte">
+    <h2 style="margin-top:0;">Nouvelle vente</h2>
+    {% if permanence %}
+    <form method="post" action="{{ url_for('caisse.caisse_nouveau_panier') }}">
+        <button type="submit" class="btn btn-primaire">+ Nouvelle vente</button>
+        <span style="color:#718096; font-size:0.9rem; margin-left:0.6rem;">
+            Aucun nom requis pour commencer : ajoutez les prestations, puis Encaissez ou Enregistrez.
+        </span>
+    </form>
+    {% else %}
+    <p style="color:#c53030;">
+        Aucune permanence n'est ouverte : impossible de commencer une nouvelle vente.
+        <a href="{{ url_for('accueil.accueil') }}">Ouvrir la permanence</a>.
+    </p>
+    {% endif %}
+</div>
+
+<div class="carte">
+    <h2 style="margin-top:0;">Paniers en attente</h2>
+    <div class="table-scroll">
+    <table>
+        <thead>
+            <tr><th>Adhérent</th><th class="col-nowrap">Créé le</th><th class="col-num">Lignes</th><th class="col-num">Total</th><th style="width:100px;">Action</th></tr>
+        </thead>
+        <tbody>
+            {% for p in paniers_en_attente %}
+            <tr>
+                <td>{{ p.nom_adherent }}</td>
+                <td class="col-nowrap">{{ p.date_creation.strftime('%d/%m/%Y %H:%M') if p.date_creation else '' }}</td>
+                <td class="col-num">{{ p.nb_lignes }}</td>
+                <td class="col-num">{{ "%.2f"|format(p.total) }} €</td>
+                <td><a class="btn btn-editer" href="{{ url_for('caisse.caisse_panier', panier_id=p.id) }}">Ouvrir</a></td>
+            </tr>
+            {% else %}
+            <tr><td colspan="5">Aucun panier en attente.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endif %}
+{% endblock %}

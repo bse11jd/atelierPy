@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block titre %}Retrait Caisse{% endblock %}
+
+{% block contenu %}
+<h1>Retrait Caisse</h1>
+
+<div class="carte">
+    {% if permanence %}
+        <p>
+            Permanence <strong>ouverte</strong> par <strong>{{ permanence.nom_ouverture }}</strong>.
+            Ce retrait y sera rattaché. Total des retraits déjà enregistrés sur cette permanence :
+            <strong>{{ "%.2f"|format(total_retraits) }} €</strong>.
+        </p>
+    {% else %}
+        <p><em>Aucune permanence n'est actuellement ouverte : ce retrait sera enregistré à titre
+            d'historique, sans être rattaché à une permanence.</em></p>
+    {% endif %}
+
+    <form method="post" action="{{ url_for('retrait_caisse.retrait_caisse_ajouter') }}">
+        <p>
+            <label>Nom de la personne qui effectue le retrait<br>
+                <input type="text" name="nom_personne" required placeholder="Nom" autocomplete="off">
+            </label>
+        </p>
+        <p>
+            <label>Motif du retrait<br>
+                <input type="text" name="motif" required placeholder="Ex : achat consommables, dépôt banque...">
+            </label>
+        </p>
+        <p>
+            <label>Montant<br>
+                <input type="number" step="0.01" min="0.01" name="montant" required>
+            </label>
+        </p>
+        <button type="submit" class="btn btn-primaire">Enregistrer le retrait</button>
+    </form>
+</div>
+
+<p><em>L'historique complet des retraits est consultable depuis l'écran
+    <a href="{{ url_for('tableau_de_bord.tableau_de_bord') }}">Tableau de bord</a>.</em></p>
+{% endblock %}

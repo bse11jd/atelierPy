@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block titre %}AdminDB{% endblock %}
+
+{% block contenu %}
+<h1>Administration de la base de données</h1>
+
+<div class="carte">
+    <p>Fichier de base de données : <code>{{ db_path }}</code>
+        {% if db_exists %}<span style="color:green;">(présent)</span>{% else %}<span style="color:red;">(absent)</span>{% endif %}
+    </p>
+
+    {% if adminer_url %}
+    <p><a class="btn btn-primaire" href="{{ adminer_url }}" target="_blank">Ouvrir Adminer</a></p>
+    {% else %}
+    <p><em>Aucune URL Adminer configurée pour le moment. À définir lors du déploiement
+        (ex : service Adminer déployé en parallèle, pointant sur ce fichier SQLite).</em></p>
+    {% endif %}
+</div>
+{% endblock %}

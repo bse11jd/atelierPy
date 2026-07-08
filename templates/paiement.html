@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block titre %}Paiement{% endblock %}
+
+{% block contenu %}
+<h1>Moyens de paiement</h1>
+<p><em>Cochez « Espèces » pour le(s) moyen(s) de paiement à comptabiliser dans le fond de
+    caisse de la permanence (écran Accueil).</em></p>
+
+<div class="carte">
+    <form class="inline" method="post" action="{{ url_for('paiement.paiement_ajouter') }}">
+        <input type="text" name="nom" placeholder="Nouveau moyen de paiement (ex: Cash, CB...)" required>
+        <label><input type="checkbox" name="est_especes"> Espèces</label>
+        <button type="submit" class="btn btn-primaire">Ajouter</button>
+    </form>
+
+    <table>
+        <thead>
+            <tr><th>Nom</th><th style="width:100px;">Espèces</th><th style="width:220px;">Action</th></tr>
+        </thead>
+        <tbody>
+            {% for m in moyens %}
+            <tr id="vue-pm-{{ m.id }}">
+                <td>{{ m.nom }}</td>
+                <td>{{ '✅' if m.est_especes else '—' }}</td>
+                <td>
+                    <button type="button" class="btn btn-editer" onclick="toggleEdition('pm-{{ m.id }}')">Éditer</button>
+                    <form method="post" action="{{ url_for('paiement.paiement_supprimer', pm_id=m.id) }}"
+                          style="display:inline;" onsubmit="return confirm('Supprimer {{ m.nom }} ?');">
+                        <button type="submit" class="btn btn-danger">Supprimer</button>
+                    </form>
+                </td>
+            </tr>
+            <tr id="edition-pm-{{ m.id }}" class="ligne-edition">
+                <td colspan="3">
+                    <form method="post" action="{{ url_for('paiement.paiement_modifier', pm_id=m.id) }}">
+                        <input type="text" name="nom" value="{{ m.nom }}" required>
+                        <label><input type="checkbox" name="est_especes" {{ 'checked' if m.est_especes }}> Espèces</label>
+                        <button type="submit" class="btn btn-primaire">Enregistrer</button>
+                        <button type="button" class="btn btn-annuler" onclick="toggleEdition('pm-{{ m.id }}')">Annuler</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="3">Aucun moyen de paiement enregistré.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

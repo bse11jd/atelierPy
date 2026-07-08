@@ -1,0 +1,11 @@
+# À copier dans le .gitignore de ton projet Flask
+# (important : évite d'écraser la base de données et le venv à chaque déploiement)
+
+venv/
+__pycache__/
+*.pyc
+instance/
+*.sqlite3
+*.db
+.env
+z*.sh
