@@ -1,0 +1,15 @@
+[Unit]
+Description=__APP_NAME__ (Flask + waitress)
+After=network.target
+
+[Service]
+Type=simple
+User=__APP_USER__
+WorkingDirectory=__WORK_DIR__
+ExecStart=__WORK_DIR__/venv/bin/waitress-serve --host=0.0.0.0 --port=__PORT__ __FLASK_ENTRYPOINT__
+Restart=on-failure
+RestartSec=3
+Environment=PYTHONUNBUFFERED=1
+
+[Install]
+WantedBy=multi-user.target

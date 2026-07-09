@@ -1,0 +1,35 @@
+#!/bin/bash
+# Ce hook est copié et personnalisé automatiquement par setup-pi.sh
+# Il se déclenche à chaque "git push" reçu par le dépôt bare.
+
+WORK_TREE="__WORK_DIR__"
+GIT_DIR="__REPO_DIR__"
+BRANCH="__BRANCH__"
+APP_NAME="__APP_NAME__"
+
+while read oldrev newrev ref
+do
+    if [[ "$ref" = "refs/heads/${BRANCH}" ]]; then
+        echo "-----------------------------------------------------"
+        echo ">> Nouveau push reçu sur ${BRANCH}, déploiement en cours..."
+
+        # 1. Récupère le code dans le dossier de travail
+        git --work-tree="${WORK_TREE}" --git-dir="${GIT_DIR}" checkout -f "${BRANCH}"
+
+        # 2. Installe/actualise les dépendances Python
+        cd "${WORK_TREE}"
+        if [ -f "requirements.txt" ]; then
+            echo ">> Installation des dépendances..."
+            "${WORK_TREE}/venv/bin/pip" install --quiet -r requirements.txt
+        fi
+
+        # 3. Redémarre le service
+        echo ">> Redémarrage du service ${APP_NAME}..."
+        sudo systemctl restart "${APP_NAME}.service"
+
+        echo ">> Déploiement terminé."
+        echo "-----------------------------------------------------"
+    else
+        echo ">> Push reçu sur ${ref}, ignoré (seule la branche ${BRANCH} est déployée)."
+    fi
+done
