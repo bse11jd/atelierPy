@@ -7,5 +7,8 @@ __pycache__/
 instance/
 *.sqlite3
 *.db
+*.spec
 .env
 z*.sh
+build
+dist
