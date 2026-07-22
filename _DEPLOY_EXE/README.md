@@ -8,11 +8,9 @@ Transformer un projet Flask/SQLite/SQLAlchemy en application de bureau (Linux et
 
 La base SQLite reste stockée sous instance/dtabase.db
 
-
-
 Installer : pywebview et pyinstaller (Verifier requirement.txt / pip install -r requirements.txt)
 
-## 
+```
 
 ## 1\. Tester en mode web classique
 
@@ -84,4 +82,5 @@ dossier avec plusieurs fichiers).
 pointe vers l'exécutable généré.
 * Si le projet grossit, envisager `PyOxidizer` ou `briefcase` comme
 alternatives à PyInstaller.
+* apres lancement de l'executable l'application est egalement accessible via un navigateur (http://127.0.0.1:5000)
 
