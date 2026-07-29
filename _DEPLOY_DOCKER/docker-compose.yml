@@ -1,0 +1,16 @@
+services:
+  atelierpy:
+    build:
+      context: ..
+      dockerfile: _DEPLOY_DOCKER/Dockerfile
+    image: atelierpy:latest
+    container_name: atelierpy
+    restart: always
+    ports:
+     # mapping 8080 (docker) et 5000 (app.py) 
+      - "8080:5000"
+    volumes:
+      # Persistance de la base SQLite (et autres fichiers instance/) hors de l'image
+      - ./data/instance:/app/instance
+    env_file:
+      - .env
