@@ -6,11 +6,12 @@ Modèles de données SQLAlchemy.
 Structure de base prévue pour évoluer (CAISSE, CATALOGUE, FACTURES...).
 """
 
-from datetime import datetime
+from sqlalchemy import Index, text
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
 
 from APP.extensions import db
+from APP.temps import maintenant_utc
 
 
 class User(UserMixin, db.Model):
@@ -23,7 +24,7 @@ class User(UserMixin, db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     role = db.Column(db.String(30), nullable=False, default="super_utilisateur")
     actif = db.Column(db.Boolean, default=True)
-    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+    date_creation = db.Column(db.DateTime, default=maintenant_utc)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -45,9 +46,10 @@ class Category(db.Model):
     # Couleur d'affichage des boutons de prestations de cette catégorie en CAISSE
     couleur = db.Column(db.String(9), nullable=False, default="#4a5568")
 
-    prestations = db.relationship(
-        "CatalogueItem", backref="categorie", lazy=True, cascade="all, delete-orphan"
-    )
+    # Pas de suppression en cascade : supprimer une catégorie qui contient encore
+    # des prestations est refusé par la route (et échouerait en base, categorie_id
+    # étant NOT NULL) plutôt que d'effacer silencieusement le catalogue.
+    prestations = db.relationship("CatalogueItem", backref="categorie", lazy=True)
 
     def __repr__(self):
         return f"<Category {self.nom}>"
@@ -89,7 +91,7 @@ class Invoice(db.Model):
 
     id = db.Column(db.Integer, primary_key=True)
     numero = db.Column(db.String(30), unique=True, nullable=False)
-    date_facture = db.Column(db.DateTime, default=datetime.utcnow)
+    date_facture = db.Column(db.DateTime, default=maintenant_utc)
     montant = db.Column(db.Float, nullable=False, default=0.0)
     moyen_paiement_id = db.Column(db.Integer, db.ForeignKey("payment_methods.id"), nullable=True)
     panier_id = db.Column(db.Integer, db.ForeignKey("paniers.id"), nullable=True)
@@ -110,12 +112,20 @@ class Permanence(db.Model):
     """
 
     __tablename__ = "permanences"
+    # Index unique PARTIEL : au plus une ligne avec statut = 'ouverte', quoi qu'il
+    # arrive (double clic, deux postes...). Les permanences fermées ne sont pas concernées.
+    __table_args__ = (
+        Index(
+            "uq_permanence_ouverte", "statut", unique=True,
+            sqlite_where=text("statut = 'ouverte'"),
+        ),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     statut = db.Column(db.String(10), nullable=False, default="ouverte")  # 'ouverte' / 'fermee'
 
     nom_ouverture = db.Column(db.String(80), nullable=False)
-    date_ouverture = db.Column(db.DateTime, default=datetime.utcnow)
+    date_ouverture = db.Column(db.DateTime, default=maintenant_utc)
     fond_ouverture = db.Column(db.Float, nullable=False, default=0.0)
 
     nom_fermeture = db.Column(db.String(80), nullable=True)
@@ -151,7 +161,7 @@ class RetraitCaisse(db.Model):
     motif = db.Column(db.String(200), nullable=False)
     nom_personne = db.Column(db.String(120), nullable=False, default="")
     auteur = db.Column(db.String(80), nullable=False)
-    date_retrait = db.Column(db.DateTime, default=datetime.utcnow)
+    date_retrait = db.Column(db.DateTime, default=maintenant_utc)
 
     permanence = db.relationship(
         "Permanence",
@@ -186,7 +196,7 @@ class Panier(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     nom_adherent = db.Column(db.String(120), nullable=True)
     statut = db.Column(db.String(15), nullable=False, default="brouillon")
-    date_creation = db.Column(db.DateTime, default=datetime.utcnow)
+    date_creation = db.Column(db.DateTime, default=maintenant_utc)
     date_encaissement = db.Column(db.DateTime, nullable=True)
     permanence_id = db.Column(db.Integer, db.ForeignKey("permanences.id"), nullable=True)
 

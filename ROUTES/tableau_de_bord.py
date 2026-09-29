@@ -18,10 +18,25 @@ from sqlalchemy import and_
 from utils import role_required, export_to_csv
 from APP.extensions import db
 from APP.models import Invoice, PaymentMethod, Panier, RetraitCaisse
+from APP.temps import bornes_jour_local_utc, formater_local, parse_date_locale
 
 tableau_de_bord_bp = Blueprint("tableau_de_bord", __name__)
 
 FACTURES_PAR_PAGE = 50
+
+
+def _bornes_dates():
+    """
+    Lit les filtres date_debut / date_fin (jours au format AAAA-MM-JJ, en heure
+    locale) et retourne (debut_utc, fin_exclue_utc), None si le filtre est vide
+    ou invalide. Le jour de fin est INCLUS en entier : on filtre sur
+    « date < minuit local du lendemain ».
+    """
+    debut = parse_date_locale(request.args.get("date_debut"))
+    fin = parse_date_locale(request.args.get("date_fin"))
+    debut_utc = bornes_jour_local_utc(debut)[0] if debut else None
+    fin_exclue_utc = bornes_jour_local_utc(fin)[1] if fin else None
+    return debut_utc, fin_exclue_utc
 
 
 def _query_factures():
@@ -29,16 +44,15 @@ def _query_factures():
     query = Invoice.query
 
     moyen_paiement_id = request.args.get("moyen_paiement_id", type=int)
-    date_debut = request.args.get("date_debut")
-    date_fin = request.args.get("date_fin")
+    debut_utc, fin_exclue_utc = _bornes_dates()
     tri = request.args.get("tri", "date_desc")
 
     if moyen_paiement_id:
         query = query.filter(Invoice.moyen_paiement_id == moyen_paiement_id)
-    if date_debut:
-        query = query.filter(Invoice.date_facture >= date_debut)
-    if date_fin:
-        query = query.filter(Invoice.date_facture <= date_fin)
+    if debut_utc:
+        query = query.filter(Invoice.date_facture >= debut_utc)
+    if fin_exclue_utc:
+        query = query.filter(Invoice.date_facture < fin_exclue_utc)
 
     tri_options = {
         "date_desc": Invoice.date_facture.desc(),
@@ -62,14 +76,13 @@ def _query_repartition_moyens():
     Un moyen de paiement sans encaissement sur la période apparaît quand
     même, avec un total de 0 (jointure externe).
     """
-    date_debut = request.args.get("date_debut")
-    date_fin = request.args.get("date_fin")
+    debut_utc, fin_exclue_utc = _bornes_dates()
 
     conditions = [Invoice.moyen_paiement_id == PaymentMethod.id]
-    if date_debut:
-        conditions.append(Invoice.date_facture >= date_debut)
-    if date_fin:
-        conditions.append(Invoice.date_facture <= date_fin)
+    if debut_utc:
+        conditions.append(Invoice.date_facture >= debut_utc)
+    if fin_exclue_utc:
+        conditions.append(Invoice.date_facture < fin_exclue_utc)
 
     query = (
         db.session.query(
@@ -96,8 +109,10 @@ def _query_retraits():
 @role_required("super_utilisateur")
 def tableau_de_bord():
     page = request.args.get("page", 1, type=int)
-    pagination = db.paginate(
-        _query_factures(), page=page, per_page=FACTURES_PAR_PAGE, error_out=False
+    # Query.paginate (et non db.paginate) : db.paginate n'accepte plus d'objet Query
+    # avec SQLAlchemy 2.1.
+    pagination = _query_factures().paginate(
+        page=page, per_page=FACTURES_PAR_PAGE, error_out=False
     )
 
     moyens_paiement = PaymentMethod.query.order_by(PaymentMethod.nom).all()
@@ -135,7 +150,7 @@ def tableau_de_bord_export():
     rows = [
         [
             f.numero,
-            f.date_facture.strftime("%Y-%m-%d %H:%M") if f.date_facture else "",
+            formater_local(f.date_facture, "%Y-%m-%d %H:%M"),
             f.permanence.nom_ouverture if f.permanence else "",
             f.panier.nom_adherent if f.panier else "",
             f"{f.montant:.2f}",
@@ -170,7 +185,7 @@ def tableau_de_bord_paniers_non_payes_export():
         [
             p.nom_adherent,
             p.permanence.nom_ouverture if p.permanence else "",
-            p.date_creation.strftime("%Y-%m-%d %H:%M") if p.date_creation else "",
+            formater_local(p.date_creation, "%Y-%m-%d %H:%M"),
             p.nb_lignes,
             f"{p.total:.2f}",
         ]
@@ -189,7 +204,7 @@ def tableau_de_bord_retraits_export():
     retraits = _query_retraits().all()
     rows = [
         [
-            r.date_retrait.strftime("%Y-%m-%d %H:%M") if r.date_retrait else "",
+            formater_local(r.date_retrait, "%Y-%m-%d %H:%M"),
             r.permanence.nom_ouverture if r.permanence else "",
             r.nom_personne,
             r.motif,

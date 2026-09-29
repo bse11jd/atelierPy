@@ -21,17 +21,65 @@ Nouveau fonctionnement (saisie directe, sans panier nommé au préalable) :
   d'une NOUVELLE VENTE est bloquée.
 """
 
-from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 
 from utils import role_required, permanence_requise, get_permanence_active, generer_numero_facture
+from sqlalchemy import func
+from sqlalchemy.exc import IntegrityError
+
 from APP.extensions import db
+from APP.temps import maintenant_utc
 from APP.models import Panier, PanierLigne, Category, CatalogueItem, PaymentMethod, Invoice
 
 caisse_bp = Blueprint("caisse", __name__)
 
 # Statuts sur lesquels les lignes du panier restent modifiables (tout sauf annulé)
 STATUTS_MODIFIABLES = ("brouillon", "en_attente", "encaisse")
+
+
+# ---------------------------------------------------------------------------
+# Nom de l'adhérent : mémorisation au fil de la saisie + anti-doublon
+# ---------------------------------------------------------------------------
+def _nom_adherent_deja_en_attente(nom_adherent, panier):
+    """True si un AUTRE panier 'en_attente' porte déjà ce nom (comparaison
+    insensible à la casse et aux espaces superflus)."""
+    nom_normalise = " ".join(nom_adherent.split()).lower()
+    return db.session.query(
+        Panier.query.filter(
+            Panier.statut == "en_attente",
+            Panier.id != panier.id,
+            func.lower(Panier.nom_adherent) == nom_normalise,
+        ).exists()
+    ).scalar()
+
+
+def _memoriser_nom_adherent_saisi(panier):
+    """
+    Mémorise tout de suite, sur le panier, le nom d'adhérent tapé dans le champ
+    de l'écran Caisse - sans attendre un clic sur « Enregistrer » ou « Encaisser » -
+    pour qu'il ne se perde pas lors des rechargements de page provoqués par
+    l'ajout d'une prestation, un changement de quantité, une suppression de
+    ligne, etc. (le champ est renvoyé avec chacune de ces actions, voir le
+    script `static/js/app.js`).
+
+    N'écrase jamais un nom déjà enregistré par un champ vide, et ne crée pas de
+    doublon parmi les paniers déjà en attente : dans ce cas, l'ancien nom est
+    conservé et un avertissement est affiché (le contrôle bloquant est fait à
+    l'enregistrement, voir `caisse_panier_renommer`).
+    """
+    nom = request.form.get("nom_adherent")
+    if nom is None:
+        return
+    nom = nom.strip()
+    if not nom or nom == panier.nom_adherent:
+        return
+    if _nom_adherent_deja_en_attente(nom, panier):
+        flash(
+            f"Le nom « {nom} » n'a pas été mémorisé : un panier en attente porte déjà ce nom.",
+            "warning",
+        )
+        return
+    panier.nom_adherent = nom
 
 
 # ---------------------------------------------------------------------------
@@ -59,7 +107,7 @@ def caisse_nouveau_panier():
     panier = Panier(
         nom_adherent=None,
         statut="brouillon",
-        date_creation=datetime.utcnow(),
+        date_creation=maintenant_utc(),
         permanence_id=permanence.id if permanence else None,
     )
     db.session.add(panier)
@@ -106,6 +154,14 @@ def caisse_panier_renommer(panier_id):
         flash("Le nom de l'adhérent est obligatoire pour enregistrer le panier.", "danger")
         return redirect(url_for("caisse.caisse_panier", panier_id=panier.id))
 
+    if _nom_adherent_deja_en_attente(nom_adherent, panier):
+        flash(
+            f"Impossible d'enregistrer : un panier en attente existe déjà pour « {nom_adherent} ». "
+            "Ouvrez-le pour continuer la saisie, ou choisissez un autre nom.",
+            "danger",
+        )
+        return redirect(url_for("caisse.caisse_panier", panier_id=panier.id))
+
     panier.nom_adherent = nom_adherent
     if panier.statut == "brouillon":
         panier.statut = "en_attente"
@@ -138,6 +194,7 @@ def caisse_panier_ajouter(panier_id):
         )
         db.session.add(ligne)
 
+    _memoriser_nom_adherent_saisi(panier)
     db.session.commit()
     _synchroniser_facture(panier)
     return redirect(url_for("caisse.caisse_panier", panier_id=panier.id))
@@ -158,6 +215,7 @@ def caisse_ligne_quantite(panier_id, ligne_id):
         db.session.delete(ligne)
     else:
         ligne.quantite = nouvelle_quantite
+    _memoriser_nom_adherent_saisi(panier)
     db.session.commit()
     _synchroniser_facture(panier)
     return redirect(url_for("caisse.caisse_panier", panier_id=panier.id))
@@ -174,6 +232,7 @@ def caisse_ligne_supprimer(panier_id, ligne_id):
         return redirect(url_for("caisse.caisse"))
 
     db.session.delete(ligne)
+    _memoriser_nom_adherent_saisi(panier)
     db.session.commit()
     _synchroniser_facture(panier)
     return redirect(url_for("caisse.caisse_panier", panier_id=panier.id))
@@ -203,19 +262,34 @@ def caisse_panier_encaisser(panier_id):
 
     permanence = get_permanence_active()
 
-    facture = Invoice(
-        numero=generer_numero_facture(),
-        date_facture=datetime.utcnow(),
-        montant=panier.total,
-        moyen_paiement_id=moyen.id,
-        panier_id=panier.id,
-        permanence_id=permanence.id if permanence else panier.permanence_id,
-    )
-    db.session.add(facture)
+    # Le numéro est unique en base : si deux encaissements simultanés obtiennent
+    # le même numéro, la base refuse le second (IntegrityError) et on recommence
+    # avec le numéro suivant, au lieu de produire un doublon ou une erreur 500.
+    facture = None
+    for _tentative in range(5):
+        maintenant = maintenant_utc()
+        facture = Invoice(
+            numero=generer_numero_facture(),
+            date_facture=maintenant,
+            montant=panier.total,
+            moyen_paiement_id=moyen.id,
+            panier_id=panier.id,
+            permanence_id=permanence.id if permanence else panier.permanence_id,
+        )
+        db.session.add(facture)
+        panier.statut = "encaisse"
+        panier.date_encaissement = maintenant
+        _memoriser_nom_adherent_saisi(panier)  # à l'intérieur de la boucle : refait après un éventuel rollback
+        try:
+            db.session.commit()
+            break
+        except IntegrityError:
+            db.session.rollback()
+            facture = None
 
-    panier.statut = "encaisse"
-    panier.date_encaissement = datetime.utcnow()
-    db.session.commit()
+    if facture is None:
+        flash("Impossible de générer un numéro de facture, merci de réessayer.", "danger")
+        return redirect(url_for("caisse.caisse_panier", panier_id=panier.id))
 
     nom_affiche = panier.nom_adherent or "client anonyme"
     flash(

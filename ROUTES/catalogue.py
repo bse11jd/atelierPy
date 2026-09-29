@@ -10,7 +10,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 
 from utils import role_required
 from APP.extensions import db
-from APP.models import CatalogueItem, Category
+from APP.models import CatalogueItem, Category, PanierLigne
 
 catalogue_bp = Blueprint("catalogue", __name__)
 
@@ -76,7 +76,15 @@ def catalogue_modifier(item_id):
 @role_required("super_utilisateur")
 def catalogue_supprimer(item_id):
     item = CatalogueItem.query.get_or_404(item_id)
+    libelle = item.libelle
+
+    # Les lignes de panier/factures déjà créées conservent leur libellé et leur
+    # prix (copiés à l'ajout) : on détache simplement le lien vers la prestation
+    # supprimée pour ne pas laisser de référence orpheline.
+    PanierLigne.query.filter_by(catalogue_item_id=item.id).update(
+        {"catalogue_item_id": None}, synchronize_session=False
+    )
     db.session.delete(item)
     db.session.commit()
-    flash(f"Prestation « {item.libelle} » supprimée.", "info")
+    flash(f"Prestation « {libelle} » supprimée.", "info")
     return redirect(url_for("catalogue.catalogue"))

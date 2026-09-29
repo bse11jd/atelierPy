@@ -139,13 +139,32 @@ def permanence_requise(view_func):
 # Facturation (CAISSE)
 # ---------------------------------------------------------------------------
 def generer_numero_facture():
-    """Génère un numéro de facture unique du jour : F-AAAAMMJJ-0001, 0002, ..."""
-    from datetime import datetime
-    from APP.models import Invoice
+    """
+    Génère le prochain numéro de facture du jour : F-AAAAMMJJ-0001, 0002, ...
 
-    prefixe = f"F-{datetime.utcnow():%Y%m%d}-"
-    nb_du_jour = Invoice.query.filter(Invoice.numero.like(f"{prefixe}%")).count()
-    return f"{prefixe}{nb_du_jour + 1:04d}"
+    - Le jour est celui de l'heure LOCALE (et non UTC), pour ne pas changer de
+      numérotation à 1h ou 2h du matin.
+    - Le numéro suivant se base sur le PLUS GRAND numéro existant ce jour-là
+      (et non sur un simple comptage, qui produisait des doublons après une
+      suppression). L'unicité finale reste garantie par la contrainte UNIQUE de
+      la base ; l'appelant réessaie en cas de conflit (voir caisse.py).
+    """
+    from APP.models import Invoice
+    from APP.temps import aujourdhui_local
+
+    prefixe = f"F-{aujourdhui_local():%Y%m%d}-"
+    dernier = (
+        Invoice.query.filter(Invoice.numero.like(f"{prefixe}%"))
+        .order_by(Invoice.numero.desc())
+        .first()
+    )
+    suivant = 1
+    if dernier:
+        try:
+            suivant = int(dernier.numero.rsplit("-", 1)[1]) + 1
+        except (IndexError, ValueError):
+            suivant = Invoice.query.filter(Invoice.numero.like(f"{prefixe}%")).count() + 1
+    return f"{prefixe}{suivant:04d}"
 
 
 # ---------------------------------------------------------------------------

@@ -10,7 +10,7 @@
     {% if permanence %}
         <p>
             Permanence <strong>ouverte</strong> par <strong>{{ permanence.nom_ouverture }}</strong>
-            depuis le {{ permanence.date_ouverture.strftime('%d/%m/%Y à %H:%M') }}.<br>
+            depuis le {{ permanence.date_ouverture|dt_local('%d/%m/%Y à %H:%M') }}.<br>
             Fond de caisse initial : <strong>{{ "%.2f"|format(permanence.fond_ouverture) }} €</strong>
         </p>
 
@@ -98,7 +98,7 @@
             {% for p in paniers_encaisses %}
             <tr>
                 <td>{{ p.nom_adherent }}</td>
-                <td>{{ p.date_encaissement.strftime('%d/%m/%Y %H:%M') if p.date_encaissement else '' }}</td>
+                <td>{{ p.date_encaissement|dt_local('%d/%m/%Y %H:%M') if p.date_encaissement else '' }}</td>
                 <td>{{ p.facture.moyen_paiement.nom if p.facture and p.facture.moyen_paiement else '' }}</td>
                 <td>{{ "%.2f"|format(p.total) }} €</td>
             </tr>

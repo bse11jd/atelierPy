@@ -10,4 +10,4 @@ dernière mise à jour livrée). Affiché en pied de page de chaque écran.
 livraisons le même jour).
 """
 
-VERSION = "2026.07.08"
+VERSION = "2026.09.29"

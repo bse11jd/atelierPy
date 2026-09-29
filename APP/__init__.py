@@ -55,6 +55,12 @@ def create_app():
     def inject_version():
         return {"version_app": VERSION}
 
+    # Filtre Jinja `dt_local` : affiche une date stockée en UTC en heure locale
+    # (ex : {{ facture.date_facture|dt_local('%d/%m/%Y %H:%M') }})
+    from APP.temps import formater_local
+
+    app.jinja_env.filters["dt_local"] = formater_local
+
     # ------------------------------------------------------------------
     # Enregistrement des blueprints (routes)
     # ------------------------------------------------------------------

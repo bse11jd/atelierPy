@@ -43,3 +43,30 @@ function bloquerNavigationVenteEnCours() {
         return message;
     };
 }
+
+/**
+ * Écran Caisse (détail d'un panier) : le nom de l'adhérent est saisi dans un
+ * champ SÉPARÉ du bouton "Enregistrer" (il y a aussi les boutons de
+ * prestation, la quantité, la suppression de ligne, "Encaisser"...), et
+ * chacune de ces actions recharge la page. Sans cela, taper un nom puis
+ * cliquer sur une prestation avant d'avoir cliqué "Enregistrer" faisait
+ * disparaître la saisie.
+ *
+ * On intercepte donc TOUTE soumission de formulaire sur la page et on y
+ * recopie la valeur courante du champ "Adhérent", pour que chaque action
+ * transmette aussi le nom tapé au serveur (qui le mémorise sans exiger un
+ * "Enregistrer" explicite - voir ROUTES/caisse.py, _memoriser_nom_adherent_saisi).
+ */
+document.addEventListener("submit", function (evenement) {
+    var champ = document.getElementById("champ-nom-adherent");
+    if (!champ) return; // pas sur l'écran de détail d'un panier
+
+    var formulaire = evenement.target;
+    if (formulaire.elements["nom_adherent"]) return; // déjà présent (formulaire "Enregistrer")
+
+    var champCache = document.createElement("input");
+    champCache.type = "hidden";
+    champCache.name = "nom_adherent";
+    champCache.value = champ.value;
+    formulaire.appendChild(champCache);
+});

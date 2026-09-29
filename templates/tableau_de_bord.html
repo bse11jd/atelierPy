@@ -40,7 +40,7 @@
             {% for f in factures %}
             <tr>
                 <td>{{ f.numero }}</td>
-                <td class="col-nowrap">{{ f.date_facture.strftime('%d/%m/%Y %H:%M') if f.date_facture else '' }}</td>
+                <td class="col-nowrap">{{ f.date_facture|dt_local('%d/%m/%Y %H:%M') if f.date_facture else '' }}</td>
                 <td>{{ f.permanence.nom_ouverture if f.permanence else '' }}</td>
                 <td>{{ f.panier.nom_adherent if f.panier else '' }}</td>
                 <td class="col-num">{{ "%.2f"|format(f.montant) }} €</td>
@@ -119,7 +119,7 @@
             <tr>
                 <td>{{ p.nom_adherent }}</td>
                 <td>{{ p.permanence.nom_ouverture if p.permanence else '' }}</td>
-                <td class="col-nowrap">{{ p.date_creation.strftime('%d/%m/%Y %H:%M') if p.date_creation else '' }}</td>
+                <td class="col-nowrap">{{ p.date_creation|dt_local('%d/%m/%Y %H:%M') if p.date_creation else '' }}</td>
                 <td class="col-num">{{ p.nb_lignes }}</td>
                 <td class="col-num">{{ "%.2f"|format(p.total) }} €</td>
                 <td><a class="btn btn-editer" href="{{ url_for('caisse.caisse_panier', panier_id=p.id) }}">Ouvrir</a></td>
@@ -148,7 +148,7 @@
         <tbody>
             {% for r in retraits %}
             <tr id="vue-retrait-{{ r.id }}">
-                <td class="col-nowrap">{{ r.date_retrait.strftime('%d/%m/%Y %H:%M') if r.date_retrait else '' }}</td>
+                <td class="col-nowrap">{{ r.date_retrait|dt_local('%d/%m/%Y %H:%M') if r.date_retrait else '' }}</td>
                 <td>{{ r.permanence.nom_ouverture if r.permanence else '' }}</td>
                 <td>{{ r.nom_personne }}</td>
                 <td>{{ r.motif }}</td>

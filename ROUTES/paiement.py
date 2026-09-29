@@ -10,7 +10,7 @@ from flask import Blueprint, render_template, request, redirect, url_for, flash
 
 from utils import role_required
 from APP.extensions import db
-from APP.models import PaymentMethod
+from APP.models import PaymentMethod, Invoice
 
 paiement_bp = Blueprint("paiement", __name__)
 
@@ -61,7 +61,18 @@ def paiement_modifier(pm_id):
 @role_required("super_utilisateur")
 def paiement_supprimer(pm_id):
     pm = PaymentMethod.query.get_or_404(pm_id)
+    nom = pm.nom
+
+    nb_factures = Invoice.query.filter_by(moyen_paiement_id=pm.id).count()
+    if nb_factures:
+        flash(
+            f"Impossible de supprimer « {nom} » : il est utilisé par {nb_factures} "
+            "facture(s). Vous pouvez le renommer, mais pas le supprimer.",
+            "danger",
+        )
+        return redirect(url_for("paiement.paiement"))
+
     db.session.delete(pm)
     db.session.commit()
-    flash(f"Moyen de paiement « {pm.nom} » supprimé.", "info")
+    flash(f"Moyen de paiement « {nom} » supprimé.", "info")
     return redirect(url_for("paiement.paiement"))

@@ -20,6 +20,11 @@ Fonctionnement :
   actuel de APP.models, où la colonne est déjà nullable) et recopie toutes
   les données existantes, sans aucune perte.
 
+- L'unicité de la permanence « ouverte » est garantie par un index unique
+  partiel (`_garantir_une_seule_permanence_ouverte`). Sur une base existante
+  qui contiendrait déjà plusieurs permanences ouvertes, les plus anciennes sont
+  d'abord fermées automatiquement (seule la plus récente reste ouverte).
+
 Pour ajouter une évolution future :
 - nouvelle colonne obligatoire/optionnelle sur une table existante :
   ajouter une ligne dans MIGRATIONS (table, colonne, définition SQL) ;
@@ -86,6 +91,38 @@ def _rendre_colonne_nullable(connexion, inspector, table_name, colonne):
     return True
 
 
+def _garantir_une_seule_permanence_ouverte(connexion):
+    """
+    Crée l'index unique partiel qui interdit deux permanences 'ouvertes'.
+    Si la base contient déjà des doublons (situation d'avant ce garde-fou), on
+    ferme automatiquement les plus anciennes pour pouvoir créer l'index : on
+    garde ouverte la plus récente. Retourne le nombre de permanences fermées.
+    """
+    if "permanences" not in inspect(connexion).get_table_names():
+        return 0
+
+    ouvertes = connexion.execute(text(
+        "SELECT id FROM permanences WHERE statut = 'ouverte' "
+        "ORDER BY date_ouverture DESC, id DESC"
+    )).fetchall()
+
+    a_fermer = [ligne[0] for ligne in ouvertes[1:]]
+    for permanence_id in a_fermer:
+        connexion.execute(text(
+            "UPDATE permanences SET statut = 'fermee', "
+            "nom_fermeture = '(fermeture automatique)', "
+            "date_fermeture = date_ouverture, "
+            "fond_fermeture = fond_ouverture "
+            "WHERE id = :id"
+        ), {"id": permanence_id})
+
+    connexion.execute(text(
+        "CREATE UNIQUE INDEX IF NOT EXISTS uq_permanence_ouverte "
+        "ON permanences (statut) WHERE statut = 'ouverte'"
+    ))
+    return len(a_fermer)
+
+
 def appliquer_migrations():
     """
     Met à niveau la base existante (colonnes manquantes ajoutées, contraintes
@@ -126,6 +163,13 @@ def appliquer_migrations():
                 tables_reconstruites.append(f"{table}.{colonne}")
                 inspector = inspect(connexion)  # rafraîchir après reconstruction de la table
 
+        permanences_fermees = _garantir_une_seule_permanence_ouverte(connexion)
+
+    if permanences_fermees:
+        print(
+            f"[migration] {permanences_fermees} permanence(s) ouverte(s) en double "
+            "fermée(s) automatiquement (seule la plus récente reste ouverte)."
+        )
     if colonnes_ajoutees:
         print(f"[migration] Base mise à niveau : colonnes ajoutées -> {', '.join(colonnes_ajoutees)}")
     if tables_reconstruites:

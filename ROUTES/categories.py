@@ -62,7 +62,19 @@ def categories_modifier(cat_id):
 @role_required("super_utilisateur")
 def categories_supprimer(cat_id):
     cat = Category.query.get_or_404(cat_id)
+    nom = cat.nom
+
+    nb_prestations = len(cat.prestations)
+    if nb_prestations:
+        flash(
+            f"Impossible de supprimer la catégorie « {nom} » : elle contient encore "
+            f"{nb_prestations} prestation(s). Supprimez-les ou déplacez-les d'abord "
+            "vers une autre catégorie (écran Catalogue).",
+            "danger",
+        )
+        return redirect(url_for("categories.categories"))
+
     db.session.delete(cat)
     db.session.commit()
-    flash(f"Catégorie « {cat.nom} » supprimée.", "info")
+    flash(f"Catégorie « {nom} » supprimée.", "info")
     return redirect(url_for("categories.categories"))

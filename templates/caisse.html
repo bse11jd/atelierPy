@@ -10,7 +10,7 @@
 <div class="carte">
     <form class="inline" method="post" action="{{ url_for('caisse.caisse_panier_renommer', panier_id=panier.id) }}">
         <label>Adhérent
-            <input type="text" name="nom_adherent" value="{{ panier.nom_adherent or '' }}"
+            <input type="text" name="nom_adherent" id="champ-nom-adherent" value="{{ panier.nom_adherent or '' }}"
                    placeholder="Nom de l'adhérent" {{ 'disabled' if panier.statut == 'annule' }}>
         </label>
         {% if panier.statut != 'annule' %}
@@ -191,7 +191,7 @@
             {% for p in paniers_en_attente %}
             <tr>
                 <td>{{ p.nom_adherent }}</td>
-                <td class="col-nowrap">{{ p.date_creation.strftime('%d/%m/%Y %H:%M') if p.date_creation else '' }}</td>
+                <td class="col-nowrap">{{ p.date_creation|dt_local('%d/%m/%Y %H:%M') if p.date_creation else '' }}</td>
                 <td class="col-num">{{ p.nb_lignes }}</td>
                 <td class="col-num">{{ "%.2f"|format(p.total) }} €</td>
                 <td><a class="btn btn-editer" href="{{ url_for('caisse.caisse_panier', panier_id=p.id) }}">Ouvrir</a></td>

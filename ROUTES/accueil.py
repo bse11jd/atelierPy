@@ -6,7 +6,6 @@ ROUTES/accueil.py
 Gère aussi l'ouverture / fermeture de la permanence et le fond de caisse.
 """
 
-from datetime import datetime
 from flask import Blueprint, render_template, request, redirect, url_for, flash
 
 from utils import (
@@ -16,8 +15,11 @@ from utils import (
     montant_especes_depuis,
     total_retraits_permanence,
 )
+from sqlalchemy.exc import IntegrityError
+
 from APP.extensions import db
 from APP.models import Permanence, Panier
+from APP.temps import maintenant_utc
 
 accueil_bp = Blueprint("accueil", __name__)
 
@@ -83,11 +85,18 @@ def permanence_ouvrir():
     permanence = Permanence(
         statut="ouverte",
         nom_ouverture=nom,
-        date_ouverture=datetime.utcnow(),
+        date_ouverture=maintenant_utc(),
         fond_ouverture=fond_val,
     )
     db.session.add(permanence)
-    db.session.commit()
+    try:
+        db.session.commit()
+    except IntegrityError:
+        # Garde-fou de la base (index unique partiel) : une autre ouverture a eu
+        # lieu au même instant (double clic, deuxième poste...).
+        db.session.rollback()
+        flash("Une permanence est déjà ouverte.", "warning")
+        return redirect(url_for("accueil.accueil"))
     flash(f"Permanence ouverte par {nom}.", "success")
     return redirect(url_for("accueil.accueil"))
 
@@ -114,7 +123,7 @@ def permanence_fermer():
 
     permanence.statut = "fermee"
     permanence.nom_fermeture = nom
-    permanence.date_fermeture = datetime.utcnow()
+    permanence.date_fermeture = maintenant_utc()
     permanence.fond_fermeture = fond_val
     db.session.commit()
     flash(f"Permanence fermée par {nom}.", "success")
