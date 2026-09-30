@@ -35,8 +35,8 @@ flask --app app.py init-db
 | Niveau              | Authentification | Écrans accessibles |
 |----------------------|:---:|---|
 | `utilisateur`        | non | Accueil, Caisse |
-| `super_utilisateur`  | oui | + Catégories, Catalogue, Paiement, Tableau de bord |
-| `admin`              | oui | + AdminDB, Maintenance, Droits (AUTH) |
+| `super_utilisateur`  | oui | + Paramétrage (Catégories, Catalogue, Moyens de Paiement), Tableau de bord |
+| `admin`              | oui | + Maintenance, Droits (AUTH) |
 
 Un visiteur non connecté est automatiquement considéré comme `utilisateur`.
 Le bandeau affiche le niveau de droit courant, ainsi que les boutons
@@ -57,17 +57,17 @@ sont masqués (voir `templates/base.html` et `utils.py`).
 ├── ROUTES/                 # Un fichier de routes par écran (blueprints Flask)
 │   ├── accueil.py          # écran ACCUEIL       (utilisateur)
 │   ├── caisse.py           # écran CAISSE        (utilisateur)
-│   ├── categories.py       # écran CATEGORIES    (super_utilisateur)
-│   ├── catalogue.py        # écran CATALOGUE     (super_utilisateur)
-│   ├── paiement.py         # écran PAIEMENT      (super_utilisateur)
+│   ├── categories.py       # écran PARAMÉTRAGE > Catégories       (super_utilisateur)
+│   ├── catalogue.py        # écran PARAMÉTRAGE > Catalogue        (super_utilisateur)
+│   ├── paiement.py         # écran PARAMÉTRAGE > Moyens de Paiement (super_utilisateur)
 │   ├── tableau_de_bord.py  # écran TABLEAU DE BORD (super_utilisateur)
-│   ├── admindb.py          # écran ADMINDB       (admin)
 │   ├── maintenance.py      # écran MAINTENANCE   (admin)
 │   └── auth.py             # écran AUTH : login/logout + gestion des droits (admin)
 ├── templates/              # Un template HTML par écran, même nom que la route
 │   ├── base.html           # bandeau, menu conditionnel, login/logout
 │   ├── accueil.html / caisse.html / categories.html / catalogue.html
-│   ├── paiement.html / tableau_de_bord.html / admindb.html / maintenance.html
+│   ├── paiement.html / tableau_de_bord.html / maintenance.html
+│   ├── _parametrage_sousnav.html  # sous-navigation en page (Catégories / Catalogue / Moyens de Paiement)
 │   ├── auth.html           # formulaire login + gestion des comptes
 │   └── 403.html            # page d'erreur "accès refusé"
 ├── static/
@@ -178,7 +178,5 @@ d'en-têtes de colonnes.
 
 ## Points prévus pour la suite
 
-- **ADMINDB** : intégration effective d'Adminer (URL de service à configurer via
-  `app.config["ADMINER_URL"]`).
 - **TABLEAU DE BORD** : les filtres/tri/export CSV sont fonctionnels dès maintenant,
   ils s'enrichiront automatiquement avec les factures créées en caisse.

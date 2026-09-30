@@ -9,11 +9,16 @@ Nouveau fonctionnement (saisie directe, sans panier nommé au préalable) :
   'brouillon', SANS nom d'adhérent, et ouvre son détail : on peut tout de
   suite ajouter des prestations.
 - Tant qu'un panier est en 'brouillon', il doit être finalisé avant de
-  pouvoir naviguer ailleurs sur le site (blocage géré côté template/JS) :
-  - soit *Encaisser* immédiatement (le nom de l'adhérent n'est PAS requis) ;
-  - soit *Enregistrer* pour plus tard (le nom de l'adhérent est OBLIGATOIRE
-    dans ce cas ; le panier passe alors en statut 'en_attente').
-- *Annuler* reste possible à tout moment tant que le panier n'est pas encaissé.
+  pouvoir naviguer ailleurs sur le site (blocage géré côté template/JS). Le
+  détail du panier regroupe les 3 actions dans un pavé « Actions » à 3
+  colonnes (Payer / Sauver / Supprimer) :
+  - *Payer* (colonne 1) encaisse immédiatement (le nom de l'adhérent n'est
+    PAS requis) ;
+  - *Sauver* (colonne 2, bouton « Enregistrer ») nomme et sauvegarde le
+    panier pour plus tard (le nom est OBLIGATOIRE ; le panier passe alors en
+    statut 'en_attente') ;
+  - *Supprimer* (colonne 3) reste possible à tout moment tant que le panier
+    n'est pas encaissé (statut 'annule' en base, conservé mais masqué).
 - Une fois encaissé, le panier reste modifiable (lignes, nom) : le montant
   de la facture liée est recalculé automatiquement si les lignes changent.
 - Si aucune permanence n'est ouverte : l'écran CAISSE reste consultable
@@ -311,5 +316,5 @@ def caisse_panier_annuler(panier_id):
     panier.statut = "annule"
     db.session.commit()
     nom_affiche = panier.nom_adherent or "client anonyme"
-    flash(f"Panier de {nom_affiche} annulé.", "info")
+    flash(f"Panier de {nom_affiche} supprimé.", "info")
     return redirect(url_for("caisse.caisse"))

@@ -1,8 +1,11 @@
 {% extends "base.html" %}
-{% block titre %}Paiement{% endblock %}
+{% block titre %}Paramétrage - Moyens de Paiement{% endblock %}
 
 {% block contenu %}
-<h1>Moyens de paiement</h1>
+<h1>Paramétrage</h1>
+{% include "_parametrage_sousnav.html" %}
+
+<h2 style="margin-top:0;">Moyens de Paiement</h2>
 <p><em>Cochez « Espèces » pour le(s) moyen(s) de paiement à comptabiliser dans le fond de
     caisse de la permanence (écran Accueil).</em></p>
 

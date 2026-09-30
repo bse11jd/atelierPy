@@ -49,42 +49,6 @@
     {% endif %}
 </div>
 
-<div class="tuiles">
-    <a href="{{ url_for('caisse.caisse') }}" class="tuile">
-        <span class="icone">💰</span> Caisse
-    </a>
-
-    {% if current_role in ['super_utilisateur', 'admin'] %}
-    <a href="{{ url_for('categories.categories') }}" class="tuile">
-        <span class="icone">🗂️</span> Catégories
-    </a>
-    <a href="{{ url_for('catalogue.catalogue') }}" class="tuile">
-        <span class="icone">📋</span> Catalogue
-    </a>
-    <a href="{{ url_for('paiement.paiement') }}" class="tuile">
-        <span class="icone">💳</span> Paiement
-    </a>
-    <a href="{{ url_for('retrait_caisse.retrait_caisse') }}" class="tuile">
-        <span class="icone">💸</span> Retrait Caisse
-    </a>
-    <a href="{{ url_for('tableau_de_bord.tableau_de_bord') }}" class="tuile">
-        <span class="icone">📊</span> Tableau de bord
-    </a>
-    {% endif %}
-
-    {% if current_role == 'admin' %}
-    <a href="{{ url_for('admindb.admindb') }}" class="tuile">
-        <span class="icone">🗄️</span> AdminDB
-    </a>
-    <a href="{{ url_for('maintenance.maintenance') }}" class="tuile">
-        <span class="icone">🛠️</span> Maintenance
-    </a>
-    <a href="{{ url_for('auth.auth_gestion') }}" class="tuile">
-        <span class="icone">🔐</span> Droits
-    </a>
-    {% endif %}
-</div>
-
 <div class="carte">
     <h2 style="margin-top:0;">
         Paniers encaissés

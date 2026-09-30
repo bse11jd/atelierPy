@@ -8,58 +8,86 @@
 {# ============================= DÉTAIL D'UNE VENTE ============================= #}
 
 <div class="carte">
-    <form class="inline" method="post" action="{{ url_for('caisse.caisse_panier_renommer', panier_id=panier.id) }}">
-        <label>Adhérent
-            <input type="text" name="nom_adherent" id="champ-nom-adherent" value="{{ panier.nom_adherent or '' }}"
-                   placeholder="Nom de l'adhérent" {{ 'disabled' if panier.statut == 'annule' }}>
-        </label>
-        {% if panier.statut != 'annule' %}
-        <button type="submit" class="btn btn-primaire">Enregistrer</button>
-        {% endif %}
+    <div class="pave-actions-entete">
+        <h2>Actions</h2>
         {% if panier.statut != 'brouillon' %}
         <a href="{{ url_for('caisse.caisse') }}" class="btn btn-annuler">Retour à la liste</a>
         {% endif %}
-    </form>
+    </div>
 
     {% if panier.statut == 'brouillon' %}
-    <p style="color:var(--couleur-warning); margin-bottom:0;">
-        <strong>Vente en cours de saisie.</strong> Merci de la finaliser (Encaisser ou
-        Enregistrer ci-dessus) avant de quitter cette page — la navigation ailleurs sur
+    <p class="pave-actions-message" style="color:var(--couleur-warning);">
+        <strong>Vente en cours de saisie.</strong> Merci de la finaliser (Payer ou
+        Sauver ci-dessous) avant de quitter cette page — la navigation ailleurs sur
         le site est bloquée tant que ce n'est pas fait.
     </p>
     {% elif panier.statut == 'encaisse' %}
-    <p style="margin-bottom:0;"><em>Facture {{ panier.facture.numero if panier.facture else '' }} encaissée
+    <p class="pave-actions-message"><em>Facture {{ panier.facture.numero if panier.facture else '' }} encaissée
         ({{ panier.facture.moyen_paiement.nom if panier.facture and panier.facture.moyen_paiement else '' }}).
         Les prestations restent modifiables ; le montant de la facture est mis à jour automatiquement.</em></p>
     {% elif panier.statut == 'annule' %}
-    <p style="margin-bottom:0;"><em>Ce panier est annulé, il n'est plus modifiable.</em></p>
+    <p class="pave-actions-message"><em>Ce panier est annulé, il n'est plus modifiable.</em></p>
     {% endif %}
 
-    {% if panier.statut in ('brouillon', 'en_attente') %}
-    <hr style="border:none; border-top:1px solid var(--couleur-bordure); margin:1rem 0;">
-    <form class="inline" method="post" action="{{ url_for('caisse.caisse_panier_encaisser', panier_id=panier.id) }}">
-        <label>Finaliser
-            <select name="moyen_paiement_id" required>
-                <option value="" disabled selected>Moyen de paiement</option>
-                {% for m in moyens_paiement %}
-                <option value="{{ m.id }}">{{ m.nom }}</option>
-                {% endfor %}
-            </select>
-        </label>
-        <button type="submit" class="btn btn-primaire" {{ 'disabled' if panier.nb_lignes == 0 }}>
-            Encaisser
-        </button>
-        {% if panier.nb_lignes == 0 %}
-        <span style="color:#c53030; font-size:0.9rem;">Ajoutez au moins une prestation pour encaisser.</span>
-        {% else %}
-        <span style="color:#718096; font-size:0.9rem;">Le nom de l'adhérent n'est pas requis pour encaisser immédiatement.</span>
-        {% endif %}
-    </form>
-    <form method="post" action="{{ url_for('caisse.caisse_panier_annuler', panier_id=panier.id) }}"
-          style="margin-top:0.6rem;" onsubmit="return confirm('Annuler cette vente ?');">
-        <button type="submit" class="btn btn-danger">Annuler la vente</button>
-    </form>
-    {% endif %}
+    <div class="pave-actions">
+        {# ---------------------------- Colonne 1 : Payer ---------------------------- #}
+        <div class="pave-actions-col">
+            <h3>Payer</h3>
+            {% if panier.statut in ('brouillon', 'en_attente') %}
+            <form method="post" action="{{ url_for('caisse.caisse_panier_encaisser', panier_id=panier.id) }}">
+                <label>Moyen de paiement
+                    <select name="moyen_paiement_id" required>
+                        <option value="" disabled selected>Moyen de paiement</option>
+                        {% for m in moyens_paiement %}
+                        <option value="{{ m.id }}">{{ m.nom }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <button type="submit" class="btn btn-primaire" {{ 'disabled' if panier.nb_lignes == 0 }}>
+                    Encaisser
+                </button>
+                {% if panier.nb_lignes == 0 %}
+                <p class="pave-actions-note" style="color:#c53030;">Ajoutez au moins une prestation pour encaisser.</p>
+                {% else %}
+                <p class="pave-actions-note">Le nom de l'adhérent n'est pas requis pour encaisser immédiatement.</p>
+                {% endif %}
+            </form>
+            {% elif panier.statut == 'encaisse' %}
+            <p class="pave-actions-note">
+                Déjà réglé{{ ' (' + panier.facture.moyen_paiement.nom + ')' if panier.facture and panier.facture.moyen_paiement else '' }}.
+            </p>
+            {% else %}
+            <p class="pave-actions-note">—</p>
+            {% endif %}
+        </div>
+
+        {# ---------------------------- Colonne 2 : Sauver ---------------------------- #}
+        <div class="pave-actions-col">
+            <h3>Sauver</h3>
+            <form method="post" action="{{ url_for('caisse.caisse_panier_renommer', panier_id=panier.id) }}">
+                <label>Adhérent
+                    <input type="text" name="nom_adherent" id="champ-nom-adherent" value="{{ panier.nom_adherent or '' }}"
+                           placeholder="Nom de l'adhérent" {{ 'disabled' if panier.statut == 'annule' }}>
+                </label>
+                {% if panier.statut != 'annule' %}
+                <button type="submit" class="btn btn-primaire">Enregistrer</button>
+                {% endif %}
+            </form>
+        </div>
+
+        {# --------------------------- Colonne 3 : Supprimer -------------------------- #}
+        <div class="pave-actions-col">
+            <h3>Supprimer</h3>
+            {% if panier.statut in ('brouillon', 'en_attente') %}
+            <form method="post" action="{{ url_for('caisse.caisse_panier_annuler', panier_id=panier.id) }}"
+                  onsubmit="return confirm('Supprimer ce panier ?');">
+                <button type="submit" class="btn btn-danger">Supprimer le panier</button>
+            </form>
+            {% else %}
+            <p class="pave-actions-note">—</p>
+            {% endif %}
+        </div>
+    </div>
 </div>
 
 {% if panier.statut != 'annule' %}

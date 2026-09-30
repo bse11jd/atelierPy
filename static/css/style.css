@@ -36,14 +36,33 @@ body {
 .menu { display: flex; gap: 1rem; flex-wrap: wrap; }
 
 .menu a {
+    position: relative;
     color: #cbd5e0;
     text-decoration: none;
-    padding: 0.3rem 0.5rem;
+    padding: 0.3rem 0.5rem 0.3rem 1.15rem;
     border-radius: 4px;
     font-size: 0.95rem;
 }
 
+/* Distinction visuelle du niveau de droit requis pour chaque écran : une
+   pastille de couleur devant le libellé, reprenant les couleurs des badges
+   de rôle (badge-utilisateur / badge-super_utilisateur / badge-admin). */
+.menu a::before {
+    content: "";
+    position: absolute;
+    left: 0.3rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #718096; /* niveau utilisateur : accessible sans connexion (= badge-utilisateur) */
+}
+.menu a.menu-super_utilisateur::before { background: #63b3ed; } /* = badge-super_utilisateur, éclairci pour rester lisible sur fond sombre */
+.menu a.menu-admin::before { background: #fc8181; } /* = badge-admin, éclairci pour rester lisible sur fond sombre */
+
 .menu a:hover, .menu a.actif { background: var(--couleur-primaire); color: #fff; }
+.menu a.actif::before, .menu a:hover::before { background: #fff; }
 
 .bandeau-droite { display: flex; align-items: center; gap: 0.8rem; }
 
@@ -157,7 +176,28 @@ input[type=text], input[type=password], input[type=number], input[type=date], se
 .flash-warning { background: #fffaf0; color: var(--couleur-warning); border: 1px solid #fbd38d; }
 .flash-info { background: #ebf8ff; color: var(--couleur-info); border: 1px solid #90cdf4; }
 
-.tuiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1rem; margin-top: 1.5rem; }
+/* Sous-navigation en page de l'écran Paramétrage (Catégories / Catalogue / Moyens de Paiement) */
+.sousnav-parametrage {
+    display: flex;
+    gap: 0.3rem;
+    flex-wrap: wrap;
+    border-bottom: 1px solid var(--couleur-bordure);
+    margin-bottom: 1.2rem;
+}
+.sousnav-parametrage a {
+    padding: 0.5rem 1rem;
+    text-decoration: none;
+    color: #4a5568;
+    font-size: 0.92rem;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+}
+.sousnav-parametrage a:hover { color: var(--couleur-primaire); }
+.sousnav-parametrage a.actif {
+    color: var(--couleur-primaire);
+    border-bottom-color: var(--couleur-primaire);
+    font-weight: 600;
+}
 
 .caisse-layout {
     display: grid;
@@ -168,16 +208,38 @@ input[type=text], input[type=password], input[type=number], input[type=date], se
 @media (max-width: 900px) {
     .caisse-layout { grid-template-columns: 1fr; }
 }
-.tuile {
-    background: #fff;
-    border: 1px solid var(--couleur-bordure);
-    border-radius: 10px;
-    padding: 1.2rem;
-    text-align: center;
-    text-decoration: none;
-    color: var(--couleur-texte);
-    transition: box-shadow .15s;
+
+/* Écran Caisse - pavé "Actions" (Payer / Sauver / Supprimer) */
+.pave-actions-entete {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    margin-bottom: 0.6rem;
 }
-.tuile:hover { box-shadow: 0 3px 10px rgba(0,0,0,0.08); }
-.tuile .icone { font-size: 1.8rem; display: block; margin-bottom: 0.4rem; }
-.tuile.verrouillee { opacity: 0.45; cursor: not-allowed; }
+.pave-actions-entete h2 { margin: 0; }
+.pave-actions-message { margin: 0 0 1rem 0; }
+.pave-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.2rem;
+}
+@media (max-width: 700px) {
+    .pave-actions { grid-template-columns: 1fr; }
+}
+.pave-actions-col {
+    border-left: 1px solid var(--couleur-bordure);
+    padding-left: 1.2rem;
+}
+.pave-actions-col:first-child { border-left: none; padding-left: 0; }
+@media (max-width: 700px) {
+    .pave-actions-col { border-left: none; padding-left: 0; border-top: 1px solid var(--couleur-bordure); padding-top: 1rem; }
+    .pave-actions-col:first-child { border-top: none; padding-top: 0; }
+}
+.pave-actions-col h3 { margin: 0 0 0.7rem 0; font-size: 1rem; }
+.pave-actions-col form { display: flex; flex-direction: column; align-items: flex-start; gap: 0.6rem; }
+.pave-actions-col form label { display: flex; flex-direction: column; gap: 0.3rem; width: 100%; }
+.pave-actions-col select,
+.pave-actions-col input[type=text] { width: 100%; }
+.pave-actions-note { margin: 0; font-size: 0.85rem; color: #718096; }

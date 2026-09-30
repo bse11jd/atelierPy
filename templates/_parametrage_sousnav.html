@@ -1,0 +1,12 @@
+{# Sous-navigation DANS LA PAGE pour l'onglet "Paramétrage" du bandeau haut.
+   Volontairement pas de sous-menu au niveau du bandeau : les 3 écrans restent
+   des pages/routes séparées, seule cette barre à l'intérieur de la page permet
+   de passer de l'une à l'autre. #}
+<nav class="sousnav-parametrage">
+    <a href="{{ url_for('categories.categories') }}"
+       class="{{ 'actif' if request.endpoint and request.endpoint.startswith('categories.') else '' }}">Catégories</a>
+    <a href="{{ url_for('catalogue.catalogue') }}"
+       class="{{ 'actif' if request.endpoint and request.endpoint.startswith('catalogue.') else '' }}">Catalogue</a>
+    <a href="{{ url_for('paiement.paiement') }}"
+       class="{{ 'actif' if request.endpoint and request.endpoint.startswith('paiement.') else '' }}">Moyens de Paiement</a>
+</nav>

@@ -1,8 +1,11 @@
 {% extends "base.html" %}
-{% block titre %}Catalogue{% endblock %}
+{% block titre %}Paramétrage - Catalogue{% endblock %}
 
 {% block contenu %}
-<h1>Catalogue</h1>
+<h1>Paramétrage</h1>
+{% include "_parametrage_sousnav.html" %}
+
+<h2 style="margin-top:0;">Catalogue</h2>
 
 <div class="carte">
     <form class="inline" method="post" action="{{ url_for('catalogue.catalogue_ajouter') }}">

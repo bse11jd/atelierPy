@@ -13,30 +13,31 @@
         <a href="{{ url_for('accueil.accueil') }}" class="logo">🏍️ Atelier Café Racer</a>
         <nav class="menu">
             <a href="{{ url_for('accueil.accueil') }}"
-               class="{{ 'actif' if request.endpoint == 'accueil.accueil' else '' }}">Accueil</a>
+               class="menu-utilisateur {{ 'actif' if request.endpoint == 'accueil.accueil' else '' }}"
+               title="Accessible sans connexion">Accueil</a>
             <a href="{{ url_for('caisse.caisse') }}"
-               class="{{ 'actif' if request.endpoint == 'caisse.caisse' else '' }}">Caisse</a>
+               class="menu-utilisateur {{ 'actif' if request.endpoint == 'caisse.caisse' else '' }}"
+               title="Accessible sans connexion">Caisse</a>
 
             {% if current_role in ['super_utilisateur', 'admin'] %}
             <a href="{{ url_for('categories.categories') }}"
-               class="{{ 'actif' if request.endpoint == 'categories.categories' else '' }}">Catégories</a>
-            <a href="{{ url_for('catalogue.catalogue') }}"
-               class="{{ 'actif' if request.endpoint == 'catalogue.catalogue' else '' }}">Catalogue</a>
-            <a href="{{ url_for('paiement.paiement') }}"
-               class="{{ 'actif' if request.endpoint == 'paiement.paiement' else '' }}">Paiement</a>
+               class="menu-super_utilisateur {{ 'actif' if request.endpoint and (request.endpoint.startswith('categories.') or request.endpoint.startswith('catalogue.') or request.endpoint.startswith('paiement.')) else '' }}"
+               title="Réservé aux super-utilisateurs et admins">Paramétrage</a>
             <a href="{{ url_for('retrait_caisse.retrait_caisse') }}"
-               class="{{ 'actif' if request.endpoint == 'retrait_caisse.retrait_caisse' else '' }}">Retrait Caisse</a>
+               class="menu-super_utilisateur {{ 'actif' if request.endpoint == 'retrait_caisse.retrait_caisse' else '' }}"
+               title="Réservé aux super-utilisateurs et admins">Retrait Caisse</a>
             <a href="{{ url_for('tableau_de_bord.tableau_de_bord') }}"
-               class="{{ 'actif' if request.endpoint == 'tableau_de_bord.tableau_de_bord' else '' }}">Tableau de bord</a>
+               class="menu-super_utilisateur {{ 'actif' if request.endpoint == 'tableau_de_bord.tableau_de_bord' else '' }}"
+               title="Réservé aux super-utilisateurs et admins">Tableau de bord</a>
             {% endif %}
 
             {% if current_role == 'admin' %}
-            <a href="{{ url_for('admindb.admindb') }}"
-               class="{{ 'actif' if request.endpoint == 'admindb.admindb' else '' }}">AdminDB</a>
             <a href="{{ url_for('maintenance.maintenance') }}"
-               class="{{ 'actif' if request.endpoint == 'maintenance.maintenance' else '' }}">Maintenance</a>
+               class="menu-admin {{ 'actif' if request.endpoint == 'maintenance.maintenance' else '' }}"
+               title="Réservé aux admins">Maintenance</a>
             <a href="{{ url_for('auth.auth_gestion') }}"
-               class="{{ 'actif' if request.endpoint == 'auth.auth_gestion' else '' }}">Droits</a>
+               class="menu-admin {{ 'actif' if request.endpoint == 'auth.auth_gestion' else '' }}"
+               title="Réservé aux admins">Droits</a>
             {% endif %}
         </nav>
     </div>

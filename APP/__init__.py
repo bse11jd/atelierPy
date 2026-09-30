@@ -71,7 +71,6 @@ def create_app():
     from ROUTES.paiement import paiement_bp
     from ROUTES.tableau_de_bord import tableau_de_bord_bp
     from ROUTES.retrait_caisse import retrait_caisse_bp
-    from ROUTES.admindb import admindb_bp
     from ROUTES.maintenance import maintenance_bp
     from ROUTES.auth import auth_bp
 
@@ -82,7 +81,6 @@ def create_app():
     app.register_blueprint(paiement_bp)
     app.register_blueprint(tableau_de_bord_bp)
     app.register_blueprint(retrait_caisse_bp)
-    app.register_blueprint(admindb_bp)
     app.register_blueprint(maintenance_bp)
     app.register_blueprint(auth_bp)
 

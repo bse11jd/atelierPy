@@ -21,7 +21,9 @@ def maintenance():
     db_path = current_app.config.get("INSTANCE_DB_PATH")
     db_exists = os.path.exists(db_path) if db_path else False
     db_size_ko = round(os.path.getsize(db_path) / 1024, 1) if db_exists else 0
-    return render_template("maintenance.html", db_exists=db_exists, db_size_ko=db_size_ko)
+    return render_template(
+        "maintenance.html", db_path=db_path, db_exists=db_exists, db_size_ko=db_size_ko
+    )
 
 
 @maintenance_bp.route("/maintenance/export-db")

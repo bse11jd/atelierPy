@@ -5,6 +5,11 @@
 <h1>Maintenance</h1>
 
 <div class="carte">
+    <h2 style="margin-top:0;">Base de données</h2>
+    <p>Fichier de base de données : <code>{{ db_path }}</code>
+        {% if db_exists %}<span style="color:green;">(présent)</span>{% else %}<span style="color:red;">(absent)</span>{% endif %}
+    </p>
+
     <h2>Export de la base de données</h2>
     {% if db_exists %}
     <p>Taille actuelle de la base : {{ db_size_ko }} Ko.</p>
