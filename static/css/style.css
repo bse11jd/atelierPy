@@ -176,15 +176,15 @@ input[type=text], input[type=password], input[type=number], input[type=date], se
 .flash-warning { background: #fffaf0; color: var(--couleur-warning); border: 1px solid #fbd38d; }
 .flash-info { background: #ebf8ff; color: var(--couleur-info); border: 1px solid #90cdf4; }
 
-/* Sous-navigation en page de l'écran Paramétrage (Catégories / Catalogue / Moyens de Paiement) */
-.sousnav-parametrage {
+/* Sous-navigation en page (écrans Paramétrage et Tableau de bord) */
+.sousnav-page {
     display: flex;
     gap: 0.3rem;
     flex-wrap: wrap;
     border-bottom: 1px solid var(--couleur-bordure);
     margin-bottom: 1.2rem;
 }
-.sousnav-parametrage a {
+.sousnav-page a {
     padding: 0.5rem 1rem;
     text-decoration: none;
     color: #4a5568;
@@ -192,8 +192,8 @@ input[type=text], input[type=password], input[type=number], input[type=date], se
     border-bottom: 2px solid transparent;
     margin-bottom: -1px;
 }
-.sousnav-parametrage a:hover { color: var(--couleur-primaire); }
-.sousnav-parametrage a.actif {
+.sousnav-page a:hover { color: var(--couleur-primaire); }
+.sousnav-page a.actif {
     color: var(--couleur-primaire);
     border-bottom-color: var(--couleur-primaire);
     font-weight: 600;

@@ -2,7 +2,7 @@
    Volontairement pas de sous-menu au niveau du bandeau : les 3 écrans restent
    des pages/routes séparées, seule cette barre à l'intérieur de la page permet
    de passer de l'une à l'autre. #}
-<nav class="sousnav-parametrage">
+<nav class="sousnav-page">
     <a href="{{ url_for('categories.categories') }}"
        class="{{ 'actif' if request.endpoint and request.endpoint.startswith('categories.') else '' }}">Catégories</a>
     <a href="{{ url_for('catalogue.catalogue') }}"

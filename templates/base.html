@@ -27,8 +27,8 @@
                class="menu-super_utilisateur {{ 'actif' if request.endpoint == 'retrait_caisse.retrait_caisse' else '' }}"
                title="Réservé aux super-utilisateurs et admins">Retrait Caisse</a>
             <a href="{{ url_for('tableau_de_bord.tableau_de_bord') }}"
-               class="menu-super_utilisateur {{ 'actif' if request.endpoint == 'tableau_de_bord.tableau_de_bord' else '' }}"
-               title="Réservé aux super-utilisateurs et admins">Tableau de bord</a>
+               class="menu-super_utilisateur {{ 'actif' if request.endpoint and request.endpoint.startswith('tableau_de_bord.') else '' }}"
+               title="Réservé aux super-utilisateurs et admins">Tableaux de bord</a>
             {% endif %}
 
             {% if current_role == 'admin' %}

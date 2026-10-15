@@ -18,7 +18,7 @@ Le retrait est possible que la permanence soit ouverte ou fermée :
   associée.
 
 L'historique complet des retraits (modification, suppression) est
-consultable depuis l'écran TABLEAU DE BORD.
+consultable depuis l'écran TABLEAUX DE BORD.
 """
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash

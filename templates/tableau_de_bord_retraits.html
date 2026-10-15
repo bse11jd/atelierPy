@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block titre %}Tableaux de bord - Retraits de caisse{% endblock %}
+
+{% block contenu %}
+<h1>Tableaux de bord</h1>
+{% include "_tableau_de_bord_sousnav.html" %}
+
+<div class="carte">
+    <h2 style="margin-top:0;">Retraits de caisse</h2>
+    <div class="table-toolbar">
+        <a class="btn btn-logout" href="{{ url_for('tableau_de_bord.tableau_de_bord_retraits_export') }}">Exporter CSV</a>
+    </div>
+    <div class="table-scroll">
+    <table>
+        <thead>
+            <tr>
+                <th class="col-nowrap">Date</th><th>Permanent</th><th>Nom (retrait)</th><th>Motif</th>
+                <th class="col-num">Montant</th><th style="width:160px;">Action</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in retraits %}
+            <tr id="vue-retrait-{{ r.id }}">
+                <td class="col-nowrap">{{ r.date_retrait|dt_local('%d/%m/%Y %H:%M') if r.date_retrait else '' }}</td>
+                <td>{{ r.permanence.nom_ouverture if r.permanence else '' }}</td>
+                <td>{{ r.nom_personne }}</td>
+                <td>{{ r.motif }}</td>
+                <td class="col-num">{{ "%.2f"|format(r.montant) }} €</td>
+                <td>
+                    <button type="button" class="btn btn-editer" onclick="toggleEdition('retrait-{{ r.id }}')">Modifier</button>
+                    <form method="post" style="display:inline;"
+                          action="{{ url_for('tableau_de_bord.tableau_de_bord_retrait_supprimer', retrait_id=r.id) }}"
+                          onsubmit="return confirm('Supprimer ce retrait ?');">
+                        <button type="submit" class="btn btn-danger">✕</button>
+                    </form>
+                </td>
+            </tr>
+            <tr id="edition-retrait-{{ r.id }}" class="ligne-edition">
+                <td colspan="6">
+                    <form method="post"
+                          action="{{ url_for('tableau_de_bord.tableau_de_bord_retrait_modifier', retrait_id=r.id) }}">
+                        <input type="text" name="nom_personne" value="{{ r.nom_personne }}" required placeholder="Nom">
+                        <input type="text" name="motif" value="{{ r.motif }}" required placeholder="Motif" style="min-width:220px;">
+                        <input type="number" step="0.01" min="0.01" name="montant" value="{{ '%.2f'|format(r.montant) }}" required>
+                        <button type="submit" class="btn btn-primaire">Enregistrer</button>
+                        <button type="button" class="btn btn-annuler" onclick="toggleEdition('retrait-{{ r.id }}')">Annuler</button>
+                    </form>
+                </td>
+            </tr>
+            {% else %}
+            <tr><td colspan="6">Aucun retrait de caisse enregistré.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    </div>
+</div>
+{% endblock %}

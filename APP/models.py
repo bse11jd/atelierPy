@@ -85,7 +85,7 @@ class PaymentMethod(db.Model):
 
 
 class Invoice(db.Model):
-    """Factures issues de la CAISSE, consultables depuis le TABLEAU DE BORD."""
+    """Factures issues de la CAISSE, consultables depuis les TABLEAUX DE BORD."""
 
     __tablename__ = "invoices"
 
@@ -184,7 +184,7 @@ class Panier(db.Model):
                    (nom d'adhérent obligatoire, passe alors en 'en_attente').
     - en_attente : panier nommé et sauvegardé pour plus tard, en attente
                    d'encaissement (ou de complément), consultable depuis la
-                   liste des paniers en attente / le Tableau de bord.
+                   liste des paniers en attente / les Tableaux de bord.
     - encaisse   : facturé. Reste modifiable (lignes, nom) ; le montant de
                    la facture liée est automatiquement recalculé si les
                    lignes changent après coup.

@@ -73,3 +73,31 @@ def bornes_jour_local_utc(date_locale):
     debut = datetime.combine(date_locale, time.min)
     fin = datetime.combine(date_locale + timedelta(days=1), time.min)
     return _local_vers_utc_naif(debut), _local_vers_utc_naif(fin)
+
+
+MOIS_FR = (
+    "janvier", "février", "mars", "avril", "mai", "juin",
+    "juillet", "août", "septembre", "octobre", "novembre", "décembre",
+)
+
+
+def bornes_mois_local_utc(date_locale):
+    """
+    Pour le mois local contenant `date_locale`, retourne (debut, fin_exclue)
+    exprimés en UTC : minuit local du 1er du mois -> minuit local du 1er du
+    mois suivant. À utiliser ainsi : date >= debut ET date < fin_exclue.
+    """
+    premier = date_locale.replace(day=1)
+    if premier.month == 12:
+        suivant = premier.replace(year=premier.year + 1, month=1)
+    else:
+        suivant = premier.replace(month=premier.month + 1)
+    return (
+        _local_vers_utc_naif(datetime.combine(premier, time.min)),
+        _local_vers_utc_naif(datetime.combine(suivant, time.min)),
+    )
+
+
+def libelle_mois(date_locale):
+    """« octobre 2026 » (sans dépendre de la locale du système)."""
+    return f"{MOIS_FR[date_locale.month - 1]} {date_locale.year}"

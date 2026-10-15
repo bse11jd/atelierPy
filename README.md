@@ -35,7 +35,7 @@ flask --app app.py init-db
 | Niveau              | Authentification | Écrans accessibles |
 |----------------------|:---:|---|
 | `utilisateur`        | non | Accueil, Caisse |
-| `super_utilisateur`  | oui | + Paramétrage (Catégories, Catalogue, Moyens de Paiement), Tableau de bord |
+| `super_utilisateur`  | oui | + Paramétrage (Catégories, Catalogue, Moyens de Paiement), Tableaux de bord |
 | `admin`              | oui | + Maintenance, Droits (AUTH) |
 
 Un visiteur non connecté est automatiquement considéré comme `utilisateur`.
@@ -60,14 +60,16 @@ sont masqués (voir `templates/base.html` et `utils.py`).
 │   ├── categories.py       # écran PARAMÉTRAGE > Catégories       (super_utilisateur)
 │   ├── catalogue.py        # écran PARAMÉTRAGE > Catalogue        (super_utilisateur)
 │   ├── paiement.py         # écran PARAMÉTRAGE > Moyens de Paiement (super_utilisateur)
-│   ├── tableau_de_bord.py  # écran TABLEAU DE BORD (super_utilisateur)
+│   ├── tableau_de_bord.py  # écran TABLEAUX DE BORD > Factures / Paniers non payés / Retraits (super_utilisateur)
 │   ├── maintenance.py      # écran MAINTENANCE   (admin)
 │   └── auth.py             # écran AUTH : login/logout + gestion des droits (admin)
 ├── templates/              # Un template HTML par écran, même nom que la route
 │   ├── base.html           # bandeau, menu conditionnel, login/logout
 │   ├── accueil.html / caisse.html / categories.html / catalogue.html
-│   ├── paiement.html / tableau_de_bord.html / maintenance.html
+│   ├── paiement.html / maintenance.html
+│   ├── tableau_de_bord.html / tableau_de_bord_paniers.html / tableau_de_bord_retraits.html
 │   ├── _parametrage_sousnav.html  # sous-navigation en page (Catégories / Catalogue / Moyens de Paiement)
+│   ├── _tableau_de_bord_sousnav.html  # sous-navigation en page (Factures / Paniers non payés / Retraits de caisse)
 │   ├── auth.html           # formulaire login + gestion des comptes
 │   └── 403.html            # page d'erreur "accès refusé"
 ├── static/
@@ -110,7 +112,7 @@ sont masqués (voir `templates/base.html` et `utils.py`).
     liée au panier et à la permanence en cours. Le panier passe en statut « encaissé ».
   - *Enregistrer* pour plus tard : **le nom de l'adhérent est obligatoire** dans ce cas.
     Le panier passe en statut « en attente » et apparaît dans la liste des paniers en
-    attente (Caisse et Tableau de bord), modifiable à tout moment.
+    attente (Caisse et Tableaux de bord), modifiable à tout moment.
   - *Annuler* : possible tant que le panier n'est pas encaissé ; passe le panier au statut
     « annulé », non facturé, non modifiable.
 - **Ajouter des prestations** : les prestations du catalogue sont affichées sous forme de
@@ -129,16 +131,16 @@ sont masqués (voir `templates/base.html` et `utils.py`).
   Accueil visibles uniquement pour ces niveaux).
 - Un retrait nécessite le **nom de la personne** qui effectue le retrait (obligatoire),
   un **motif** (obligatoire) et un **montant > 0**. Le compte connecté qui saisit
-  l'opération est aussi enregistré en base (non affiché sur l'écran Tableau de bord).
+  l'opération est aussi enregistré en base (non affiché sur l'écran Tableaux de bord).
 - **Accessible même si aucune permanence n'est ouverte** : si une permanence est
   ouverte, le retrait y est automatiquement rattaché et déduit du fond de caisse
   suggéré en fin de permanence (écran Accueil) ; sinon il est simplement conservé
   à titre d'historique, sans permanence associée.
 - L'**historique complet des retraits**, toutes permanences confondues, ainsi que leur
   **modification** et leur **suppression** (correction d'erreur de saisie, accessibles
-  aux super-utilisateurs et admins), se trouvent sur l'écran **Tableau de bord**.
+  aux super-utilisateurs et admins), se trouvent sur l'écran **Tableaux de bord**.
 
-## Écran TABLEAU DE BORD
+## Écran TABLEAUX DE BORD
 
 Organisé en 3 blocs, dans cet ordre : **Factures** (avec son sous-tableau
 **Répartition par moyen de paiement**), **Paniers non payés**, **Retraits de caisse**.
@@ -149,8 +151,11 @@ d'en-têtes de colonnes.
    la facture a été émise) et **Adhérent** (nom renseigné dans le panier). **Pagination** :
    50 factures par page, navigation Précédent/Suivant, filtres et tri conservés d'une page
    à l'autre. L'export CSV porte sur l'intégralité du résultat filtré (pas seulement la page
-   affichée). Un sous-tableau **Répartition des encaissements par moyen de paiement**
-   (nombre de factures + montant total par moyen) applique **les mêmes filtres de dates**
+   affichée). **Période** : liste déroulante « Mois en cours » (valeur par défaut, mois
+   civil en heure locale) ou « Toutes périodes » ; les champs de dates **Du / Au** sont
+   conservés à l'écran mais ne sont actifs que pour « Toutes périodes ». Un sous-tableau
+   **Répartition des encaissements par moyen de paiement**
+   (nombre de factures + montant total par moyen) applique **la même période**
    que la liste des factures ci-dessus (mais pas le filtre par moyen de paiement, puisque le
    but est justement de les comparer entre eux) ; il est **exportable en CSV** séparément.
 2. **Paniers non payés** : liste des paniers en attente d'encaissement (adhérent, permanent,
@@ -178,5 +183,5 @@ d'en-têtes de colonnes.
 
 ## Points prévus pour la suite
 
-- **TABLEAU DE BORD** : les filtres/tri/export CSV sont fonctionnels dès maintenant,
+- **TABLEAUX DE BORD** : les filtres/tri/export CSV sont fonctionnels dès maintenant,
   ils s'enrichiront automatiquement avec les factures créées en caisse.

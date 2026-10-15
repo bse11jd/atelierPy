@@ -1,0 +1,13 @@
+AtelierPy-main dezippé dans documents de la tablette : ~/storage/shared/DOCUMENTS/AtelierPy-main
+
+telecharger termux.apk depuis f-droid et installer
+sous leterminal termux
+termux-setup-storage ### permet d'acceder à ~/storage
+créer l'environnement virtuel (venv) python dans l'espace privé de Termux :
+cd ~
+python -m venv venv
+source venv/bin/activate
+cd ~/storage/shared/Documents/atelierPy-main
+pip install -r requirements4Android.txt
+python app.py ou waitress-serve --listen=127.0.0.1:5000 app:app 
+Acceder à l'appli via le navigateur

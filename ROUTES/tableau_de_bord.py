@@ -2,8 +2,15 @@
 """
 ROUTES/tableau_de_bord.py
 ---------------------------
-Écran TABLEAU DE BORD - réservé aux super-utilisateurs et admins.
+Écran TABLEAUX DE BORD - réservé aux super-utilisateurs et admins.
+Un seul onglet dans le bandeau haut ; les 3 tableaux sont des pages distinctes
+reliées par une sous-navigation en page (_tableau_de_bord_sousnav.html) :
+  /tableau-de-bord                      -> Factures (+ répartition par moyen de paiement)
+  /tableau-de-bord/paniers-non-payes    -> Paniers non payés
+  /tableau-de-bord/retraits             -> Retraits de caisse
 - Liste des factures avec filtre, tri, pagination (50 par page) et export CSV.
+  Filtre de période : « Mois en cours » (par défaut) ou « Toutes périodes » ; les
+  dates Du / Au ne s'appliquent que pour « Toutes périodes ».
   Affiche le permanent (celui qui a ouvert la permanence) et l'adhérent facturé.
 - Répartition des encaissements par moyen de paiement (mêmes filtres de dates
   que les factures), exportable en CSV.
@@ -18,20 +25,41 @@ from sqlalchemy import and_
 from utils import role_required, export_to_csv
 from APP.extensions import db
 from APP.models import Invoice, PaymentMethod, Panier, RetraitCaisse
-from APP.temps import bornes_jour_local_utc, formater_local, parse_date_locale
+from APP.temps import (
+    aujourdhui_local, bornes_jour_local_utc, bornes_mois_local_utc,
+    formater_local, libelle_mois, parse_date_locale,
+)
 
 tableau_de_bord_bp = Blueprint("tableau_de_bord", __name__)
 
 FACTURES_PAR_PAGE = 50
 
 
+PERIODE_MOIS = "mois"      # valeur par défaut : mois en cours (heure locale)
+PERIODE_TOUTES = "toutes"  # toutes périodes : les dates Du / Au s'appliquent
+
+
+def _periode():
+    """Période choisie : « mois » (défaut, aussi pour toute valeur inconnue) ou « toutes »."""
+    if request.args.get("periode") == PERIODE_TOUTES:
+        return PERIODE_TOUTES
+    return PERIODE_MOIS
+
+
 def _bornes_dates():
     """
-    Lit les filtres date_debut / date_fin (jours au format AAAA-MM-JJ, en heure
-    locale) et retourne (debut_utc, fin_exclue_utc), None si le filtre est vide
-    ou invalide. Le jour de fin est INCLUS en entier : on filtre sur
-    « date < minuit local du lendemain ».
+    Retourne (debut_utc, fin_exclue_utc) selon le filtre de période (None = pas de borne) :
+
+    - période « mois » (par défaut) : le mois en cours, en heure locale ; les
+      champs Du / Au éventuellement présents dans l'URL sont conservés à l'écran
+      mais IGNORÉS ici ;
+    - période « toutes » : filtres date_debut / date_fin (jours au format
+      AAAA-MM-JJ, en heure locale), None si le champ est vide ou invalide. Le jour
+      de fin est INCLUS en entier : on filtre sur « date < minuit local du lendemain ».
     """
+    if _periode() == PERIODE_MOIS:
+        return bornes_mois_local_utc(aujourdhui_local())
+
     debut = parse_date_locale(request.args.get("date_debut"))
     fin = parse_date_locale(request.args.get("date_fin"))
     debut_utc = bornes_jour_local_utc(debut)[0] if debut else None
@@ -117,9 +145,6 @@ def tableau_de_bord():
 
     moyens_paiement = PaymentMethod.query.order_by(PaymentMethod.nom).all()
 
-    paniers_non_payes = _query_paniers_non_payes().all()
-    retraits = _query_retraits().all()
-
     repartition_moyens = _query_repartition_moyens().all()
     total_general = sum(r.total for r in repartition_moyens)
 
@@ -128,15 +153,33 @@ def tableau_de_bord():
         factures=pagination.items,
         pagination=pagination,
         moyens_paiement=moyens_paiement,
-        paniers_non_payes=paniers_non_payes,
-        retraits=retraits,
         repartition_moyens=repartition_moyens,
         total_general=total_general,
+        periode=_periode(),
+        mois_en_cours=libelle_mois(aujourdhui_local()),
         args=request.args,
         page_url=lambda n: url_for(
             "tableau_de_bord.tableau_de_bord",
             **{**request.args.to_dict(), "page": n},
         ),
+    )
+
+
+@tableau_de_bord_bp.route("/tableau-de-bord/paniers-non-payes")
+@role_required("super_utilisateur")
+def tableau_de_bord_paniers():
+    return render_template(
+        "tableau_de_bord_paniers.html",
+        paniers_non_payes=_query_paniers_non_payes().all(),
+    )
+
+
+@tableau_de_bord_bp.route("/tableau-de-bord/retraits")
+@role_required("super_utilisateur")
+def tableau_de_bord_retraits():
+    return render_template(
+        "tableau_de_bord_retraits.html",
+        retraits=_query_retraits().all(),
     )
 
 
@@ -233,7 +276,7 @@ def tableau_de_bord_retrait_modifier(retrait_id):
 
     if not nom_personne or not motif:
         flash("Le nom de la personne et le motif sont obligatoires.", "danger")
-        return redirect(url_for("tableau_de_bord.tableau_de_bord"))
+        return redirect(url_for("tableau_de_bord.tableau_de_bord_retraits"))
 
     try:
         montant_val = float(montant.replace(",", "."))
@@ -242,14 +285,14 @@ def tableau_de_bord_retrait_modifier(retrait_id):
 
     if montant_val <= 0:
         flash("Le montant du retrait doit être supérieur à 0.", "danger")
-        return redirect(url_for("tableau_de_bord.tableau_de_bord"))
+        return redirect(url_for("tableau_de_bord.tableau_de_bord_retraits"))
 
     retrait.nom_personne = nom_personne
     retrait.motif = motif
     retrait.montant = montant_val
     db.session.commit()
     flash("Retrait mis à jour.", "success")
-    return redirect(url_for("tableau_de_bord.tableau_de_bord"))
+    return redirect(url_for("tableau_de_bord.tableau_de_bord_retraits"))
 
 
 @tableau_de_bord_bp.route("/tableau-de-bord/retrait/<int:retrait_id>/supprimer", methods=["POST"])
@@ -259,4 +302,4 @@ def tableau_de_bord_retrait_supprimer(retrait_id):
     db.session.delete(retrait)
     db.session.commit()
     flash("Retrait supprimé.", "info")
-    return redirect(url_for("tableau_de_bord.tableau_de_bord"))
+    return redirect(url_for("tableau_de_bord.tableau_de_bord_retraits"))

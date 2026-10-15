@@ -1,0 +1,11 @@
+{# Sous-navigation DANS LA PAGE pour l'onglet "Tableaux de bord" du bandeau haut
+   (même principe que _parametrage_sousnav.html : pas de sous-menu dans le
+   bandeau, chaque tableau est une page/route séparée). #}
+<nav class="sousnav-page">
+    <a href="{{ url_for('tableau_de_bord.tableau_de_bord') }}"
+       class="{{ 'actif' if request.endpoint == 'tableau_de_bord.tableau_de_bord' else '' }}">Factures</a>
+    <a href="{{ url_for('tableau_de_bord.tableau_de_bord_paniers') }}"
+       class="{{ 'actif' if request.endpoint == 'tableau_de_bord.tableau_de_bord_paniers' else '' }}">Paniers non payés</a>
+    <a href="{{ url_for('tableau_de_bord.tableau_de_bord_retraits') }}"
+       class="{{ 'actif' if request.endpoint == 'tableau_de_bord.tableau_de_bord_retraits' else '' }}">Retraits de caisse</a>
+</nav>
